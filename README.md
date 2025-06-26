@@ -23,3 +23,8 @@ python supreme_justia.py 502
 
 - this script calls the [downloader.py](downloader.py) script to download the PDFs and metadata, and then stores the results in a local SQLite database file named `scotus.db`.
 - A sample notebook is provided in [demo.ipynb](demo.ipynb) to explore the data and perform some basic analysis to explore a sampling of a scotus corpus.
+
+- run for an automated loop of numbers (i.e. `505-510`) pass `db_name` as the 2nd arg and `auto` as the 3rd argument:
+    ```bash
+    for i in {505..510}; do python supreme_justia.py $i pdf_texts.pdf auto; done
+    ```

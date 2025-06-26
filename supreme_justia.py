@@ -77,7 +77,12 @@ for link in unique_case_links:
 
 # Optional: Save these URLs to our database
 print("\nWould you like to download these PDFs and save them to the database?")
-download_choice = input("Type 'yes' to proceed: ").strip().lower()
+auto_accept = False
+if len(sys.argv) > 3 and sys.argv[3].lower() == 'auto':
+    auto_accept = True
+    download_choice = 'yes'
+else:
+    download_choice = input("Type 'yes' to proceed: ").strip().lower()
 if download_choice == 'yes':
     # run the script downloader.py with the URL as the first arg
     import downloader  # Assuming downloader.py is in the same directory
