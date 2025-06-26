@@ -16,8 +16,33 @@ def download_pdf(url):
     response = requests.get(url)
     if response.status_code == 200:
         return BytesIO(response.content)
+    elif response.status_code == 404:
+        print('PDF not found at the provided URL. Checking for alternative URLs...')
+        # Always try to find any .pdf link on the parent page (handles random filenames and subdirectories)
+        parent_url = url.rsplit('/', 1)[0]
+        print(f"Searching for .pdf links at {parent_url}")
+        page = requests.get(parent_url)
+        if page.status_code == 200:
+            soup = BeautifulSoup(page.text, 'html.parser')
+            for a in soup.find_all('a', href=True):
+                href = a['href']
+                if href.endswith('.pdf'):
+                    # Handle relative and absolute links
+                    if href.startswith('http'):
+                        pdf_url = href
+                    elif href.startswith('/'):
+                        pdf_url = 'https://supreme.justia.com' + href
+                    else:
+                        pdf_url = parent_url + '/' + href
+                    print(f"Trying found PDF link: {pdf_url}")
+                    resp = requests.get(pdf_url)
+                    if resp.status_code == 200:
+                        return BytesIO(resp.content)
+        raise Exception("Failed to download PDF: 404 and no alternative .pdf found on parent page.")
     else:
         raise Exception(f"Failed to download PDF: {response.status_code}")
+    
+
 def extract_text_from_pdf(pdf_file):
     reader = PdfReader(pdf_file)
     text = []
