@@ -28,13 +28,15 @@ def extract_text_from_pdf(pdf_file):
 def extract_html_metadata(url):
     """
     Extract HTML metadata from the base URL of a PDF
-    For URLs like https://supreme.justia.com/cases/federal/us/502/62/case.pdf
+    For URLs like https://supreme.justia.com/cases/federal/us/502/62/case.pdf or ##-####/index.pdf for newer versions
     This will extract from https://supreme.justia.com/cases/federal/us/502/62/
     """
     # Convert PDF URL to base URL if needed
     base_url = url
     if base_url.endswith('case.pdf'):
         base_url = base_url[:-8]  # Remove 'case.pdf'
+    elif base_url.endswith('index.pdf'):
+        base_url = base_url[:-9]  # Remove 'index.pdf'
     
     print(f"Fetching metadata from {base_url}")
     

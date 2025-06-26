@@ -12,6 +12,7 @@ Repository to begin exploring corpus lingustics applied to administrative law
     > - *h. Forge headers or otherwise manipulate identifiers or other data in order to disguise the origin of any Content transmitted through the Service or to manipulate your presence on our sites;* and 
     > - *m. Take any action that imposes an unreasonably or disproportionately large load on our infrastructure.*
 - there are PDFs for volumes 502-605, ranging from 1991 to 2025 present.
+    - at 540 volume, the URL no longer is similarly structured and a curl request will need to be made to get the actual PDF url, something like /volume_num/##-####/index.pdf
 
 ```bash
 python3.11 -m venv .venv
