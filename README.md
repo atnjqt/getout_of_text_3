@@ -7,6 +7,10 @@
 Repository to begin exploring corpus lingustics applied to administrative law
 
 - think about corpus of SCOTUS, starting with https://supreme.justia.com/cases/federal/us/volume/
+- their terms of service allow for downloading data, please see here for reference https://www.justia.com/terms-of-service/ 
+    > **6. MEMBER CONDUCT:**
+    > - *h. Forge headers or otherwise manipulate identifiers or other data in order to disguise the origin of any Content transmitted through the Service or to manipulate your presence on our sites;* and 
+    > - *m. Take any action that imposes an unreasonably or disproportionately large load on our infrastructure.*
 - there are PDFs for volumes 502-605, ranging from 1991 to 2025 present.
 
 ```bash
