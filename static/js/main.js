@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
             recordCount.textContent = '';
             return;
         }
-        let html = '<table class="table table-striped"><thead><tr>';
+        let html = '<table class="table table-striped table-bordered"><thead><tr>';
         const cols = ['Docket No.', 'Granted', 'Argued', 'Decided', 'url', 'oyez', 'snippet'];
         for (const col of cols) html += `<th>${col === 'snippet' ? 'Context Snippet' : col === 'oyez' ? 'Oyez' : col}</th>`;
         html += '</tr></thead><tbody>';
