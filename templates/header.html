@@ -1,0 +1,80 @@
+<!-- Header include for SCOTUS PDF Database -->
+<script>
+// Apply dark mode before DOMContentLoaded to prevent flicker
+(function() {
+  if (document.cookie.includes('darkmode=1')) {
+    document.documentElement.classList.add('darkmode-preload');
+    document.body.classList.add('dark-mode');
+  }
+})();
+</script>
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4" id="main-navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="/">
+      <i class="fa-solid fa-wand-sparkles me-1"></i><code> getout-of-text3</code>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/about">
+            <i class="fas fa-circle-info me-1"></i>About
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/ejacquot/getout-of-text3" target="_blank" rel="noopener">
+            <i class="fab fa-github me-1"></i>GitHub
+          </a>
+        </li>
+        <li class="nav-item">
+          <button id="darkModeToggle" class="btn btn-outline-secondary ms-3" type="button">
+            <i class="fas fa-moon"></i> <span class="d-none d-md-inline">Dark Mode</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- FontAwesome CDN for GitHub icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script>
+// Simple dark mode toggle with persistence
+window.addEventListener('DOMContentLoaded', function() {
+  const toggle = document.getElementById('darkModeToggle');
+  // Set navbar classes on load
+  if (document.body.classList.contains('dark-mode')) {
+    document.getElementById('main-navbar').classList.add('navbar-dark', 'bg-dark');
+  }
+  toggle.addEventListener('click', function() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    document.getElementById('main-navbar').classList.toggle('navbar-dark');
+    document.getElementById('main-navbar').classList.toggle('bg-dark');
+    // Set cookie for 1 year
+    document.cookie = 'darkmode=' + (isDark ? '1' : '0') + '; path=/; max-age=31536000';
+  });
+
+  // Wand icon click triggers search for 'get-out-of-text'
+  const wand = document.querySelector('.navbar-brand .fa-wand-sparkles');
+  if (wand) {
+    wand.style.cursor = 'pointer';
+    wand.addEventListener('click', function(e) {
+      e.preventDefault();
+      const input = document.getElementById('searchInput');
+      if (input) {
+        input.value = 'get-out-of-text';
+        // Submit the form programmatically
+        const form = document.getElementById('searchForm');
+        if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      } else {
+        // If not on index, go to / with query param
+        window.location.href = '/?search=get-out-of-text';
+      }
+    });
+  }
+});
+</script>
+<style>
+.darkmode-preload body { background: #181a1b !important; }
+</style>
