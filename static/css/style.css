@@ -151,3 +151,14 @@ body.dark-mode .btn-close {
     font-size: 0.80rem;
     flex: 0 10% 10%;
 }
+
+/* Proposal card dark mode styles (moved from about.html) */
+body.dark-mode .proposal-card, body.dark-mode .proposal-card .card-body {
+    background-color: #23272b !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #444 !important;
+}
+body.dark-mode .proposal-card a {
+    color: #0dcaf0 !important;
+    text-decoration: underline;
+}
