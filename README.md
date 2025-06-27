@@ -38,3 +38,11 @@ python supreme_justia.py 502
 - A sample notebook is provided in [demo.ipynb](demo.ipynb) to explore the data and perform some basic analysis to explore a sampling of a scotus corpus by reading the DB into a pandas dataframe.
 
 - in a scotus document, usually sections of text are described as 'Opinion of the Court', 'Opinion of JUSTICE NAME', or 'JUSTCE NAME, dissenting'. There are likely steps to chunk the text into who's opinion it was related to. I think over time we could see how the opinions change by using corpus stuff.
+
+## Web App Demo
+
+```bash
+python app.py
+```
+- check on http://localhost:5000, click the `wand` icon to get started with a sample query search. This is a proof of concept on how to leverage further corpus linguistic tools on this supreme court corpus from 1991 to 2025.
+
