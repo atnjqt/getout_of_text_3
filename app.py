@@ -80,6 +80,16 @@ def search():
     columns = ['Docket No.', 'Granted', 'Argued', 'Decided', 'url', 'snippet']
     return results[columns].to_json(orient='records')
 
+# oyez endpoint
+@app.route('/oyez')
+def oyez():
+    year = request.args.get('year')
+    docket = request.args.get('docket')
+    oyez_url = ''
+    if year and docket:
+        oyez_url = f'https://api.oyez.org/cases/{year}/{docket}'
+    return render_template('oyez.html', oyez_url=oyez_url)
+
 # about
 @app.route('/about')
 def about():

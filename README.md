@@ -45,4 +45,5 @@ python supreme_justia.py 502
 python app.py
 ```
 - check on http://localhost:5000, click the `wand` icon to get started with a sample query search. This is a proof of concept on how to leverage further corpus linguistic tools on this supreme court corpus from 1991 to 2025.
+- this pairs justia data with the oyez api to provide a more complete view of the case, including audio and transcripts. 
 

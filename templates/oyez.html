@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oyez JSON Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+{% include 'header.html' %}
+<div class="container mt-5">
+    <h2 class="mb-3"><i class="fas fa-gavel me-2"></i>Oyez JSON Viewer</h2>
+    <form id="oyezForm" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" id="oyezUrl" placeholder="Paste Oyez JSON URL (e.g. https://api.oyez.org/cases/2024/23-1)" required value="{{ oyez_url|default('') }}">
+            <button class="btn btn-primary" type="submit">Fetch JSON</button>
+        </div>
+    </form>
+    <div class="mb-3">
+        <button class="btn btn-secondary" id="showKeysBtn" disabled>Show Top-Level Keys</button>
+    </div>
+    <div id="oyezSummary" class="mb-4"></div>
+    <div id="oyezResult" class="bg-dark text-light p-3 rounded" style="min-height:200px; font-family:monospace; white-space:pre-wrap; word-break:break-all;"></div>
+    <div id="oyezKeys" class="mt-3"></div>
+</div>
+<script>
+let lastJson = null;
+function renderOyezSummary(data) {
+    if (!data || typeof data !== 'object') return '';
+    // Pick some representative fields to show in a summary table
+    const fields = [
+        { label: 'Case Name', key: 'name' },
+        { label: 'Docket Number', key: 'docket_number' },
+        { label: 'Term', key: 'term' },
+        { label: 'First Party', key: 'first_party' },
+        { label: 'Second Party', key: 'second_party' },
+        { label: 'Manner of Jurisdiction', key: 'manner_of_jurisdiction' },
+        { label: 'Facts of the Case', key: 'facts_of_the_case' },
+        { label: 'Question', key: 'question' },
+        { label: 'Conclusion', key: 'conclusion' },
+        { label: 'Description', key: 'description' },
+        { label: 'Justia URL', key: 'justia_url', isUrl: true },
+        { label: 'Oyez API Link', key: 'href', isUrl: true },
+    ];
+    let html = '<table class="table table-bordered table-dark table-striped">';
+    html += '<tbody>';
+    fields.forEach(f => {
+        let val = data[f.key];
+        if (val === undefined || val === null || val === '') return;
+        if (f.isUrl) {
+            val = `<a href="${val}" target="_blank" rel="noopener">${val}</a>`;
+        } else if (typeof val === 'string' && val.length > 300) {
+            val = val.slice(0, 300) + '…';
+        }
+        html += `<tr><th>${f.label}</th><td>${val}</td></tr>`;
+    });
+    // Add written_opinion section above Decided By
+    if (Array.isArray(data['written_opinion']) && data['written_opinion'].length > 0) {
+        // Sort so 'Opinion of the Court' (majority) comes first
+        const sortedOpinions = data['written_opinion'].slice().sort((a, b) => {
+            const getType = op => (op.type && op.type.value) || '';
+            if (getType(a) === 'majority') return -1;
+            if (getType(b) === 'majority') return 1;
+            return 0;
+        });
+        let opinionsHtml = '<ul class="list-group mb-3">';
+        sortedOpinions.forEach(op => {
+            opinionsHtml += '<li class="list-group-item bg-dark text-light border-secondary">';
+            if (op.type && op.type.label) {
+                opinionsHtml += `<b>${op.type.label}</b> `;
+            } else if (op.title) {
+                opinionsHtml += `<b>${op.title}</b> `;
+            }
+            if (op.judge_full_name) {
+                opinionsHtml += `by <span class="text-info">${op.judge_full_name}</span> `;
+            }
+            if (op.justia_opinion_url) {
+                opinionsHtml += `<a href="${op.justia_opinion_url}" target="_blank" rel="noopener">[Justia]</a> `;
+            }
+            if (op.href) {
+                opinionsHtml += `<a href="${op.href}" target="_blank" rel="noopener">[Oyez]</a>`;
+            }
+            opinionsHtml += '</li>';
+        });
+        opinionsHtml += '</ul>';
+        html += `<tr><th>Written Opinions</th><td>${opinionsHtml}</td></tr>`;
+    }
+    // Add decided_by court and justices
+    if (data['decided_by'] && typeof data['decided_by'] === 'object') {
+        const court = data['decided_by'];
+        let courtHtml = `<b>${court.name || ''}</b>`;
+        if (court.href) {
+            courtHtml += ` (<a href="${court.href}" target="_blank" rel="noopener">Oyez</a>)`;
+        }
+        if (Array.isArray(court.members)) {
+            courtHtml += '<ul class="list-group mt-2">';
+            court.members.forEach(justice => {
+                courtHtml += `<li class="list-group-item bg-dark text-light border-secondary d-flex align-items-center">`;
+                if (justice.thumbnail && justice.thumbnail.href) {
+                    courtHtml += `<img src="${justice.thumbnail.href}" alt="${justice.name}" style="width:32px;height:32px;object-fit:cover;border-radius:50%;margin-right:8px;">`;
+                }
+                courtHtml += `<a href="${justice.href}" target="_blank" rel="noopener" class="text-info">${justice.name}</a>`;
+                if (justice.roles && justice.roles[0] && justice.roles[0].role_title) {
+                    courtHtml += ` <span class="text-muted small ms-2">(${justice.roles[0].role_title})</span>`;
+                }
+                courtHtml += '</li>';
+            });
+            courtHtml += '</ul>';
+        }
+        html += `<tr><th>Decided By</th><td>${courtHtml}</td></tr>`;
+    }
+    html += '</tbody></table>';
+    return html;
+}
+document.getElementById('oyezForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const url = document.getElementById('oyezUrl').value.trim();
+    const resultDiv = document.getElementById('oyezResult');
+    const showKeysBtn = document.getElementById('showKeysBtn');
+    const keysDiv = document.getElementById('oyezKeys');
+    resultDiv.textContent = 'Loading...';
+    keysDiv.innerHTML = '';
+    showKeysBtn.disabled = true;
+    fetch(url)
+        .then(resp => {
+            if (!resp.ok) throw new Error('Failed to fetch JSON');
+            return resp.json();
+        })
+        .then(data => {
+            lastJson = data;
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+            resultDiv.style.display = '';
+            document.getElementById('oyezSummary').innerHTML = '';
+            showKeysBtn.disabled = false;
+            document.getElementById('oyezSummary').innerHTML = renderOyezSummary(data);
+        })
+        .catch(err => {
+            resultDiv.textContent = 'Error: ' + err.message;
+            lastJson = null;
+            showKeysBtn.disabled = true;
+            document.getElementById('oyezSummary').innerHTML = '';
+        });
+});
+document.getElementById('showKeysBtn').addEventListener('click', function() {
+    const keysDiv = document.getElementById('oyezKeys');
+    const resultDiv = document.getElementById('oyezResult');
+    if (lastJson && typeof lastJson === 'object') {
+        // Hide the JSON display when showing keys
+        resultDiv.style.display = 'none';
+        const keys = Object.keys(lastJson);
+        let html = '<b>Top-level keys:</b><ul class="list-group mb-2">';
+        keys.forEach(key => {
+            let val = lastJson[key];
+            let valType = typeof val;
+            let displayVal;
+            if (val === null) {
+                displayVal = '<span class="text-muted">null</span>';
+            } else if (Array.isArray(val)) {
+                displayVal = `<span class="text-info">Array[${val.length}]</span>`;
+            } else if (valType === 'object') {
+                displayVal = '<span class="text-info">Object</span>';
+            } else if (valType === 'string') {
+                displayVal = `<span class="text-success">'${val.length > 60 ? val.slice(0,60)+'…' : val}'</span>`;
+            } else {
+                displayVal = `<span class="text-warning">${val}</span>`;
+            }
+            html += `<li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center"><span>${key}</span><span>${displayVal}</span></li>`;
+        });
+        html += '</ul>';
+        keysDiv.innerHTML = html;
+    } else {
+        keysDiv.innerHTML = '<span class="text-danger">No JSON loaded.</span>';
+    }
+});
+// Show JSON again if a new fetch is made
+document.getElementById('oyezForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const url = document.getElementById('oyezUrl').value.trim();
+    const resultDiv = document.getElementById('oyezResult');
+    const showKeysBtn = document.getElementById('showKeysBtn');
+    const keysDiv = document.getElementById('oyezKeys');
+    resultDiv.textContent = 'Loading...';
+    keysDiv.innerHTML = '';
+    showKeysBtn.disabled = true;
+    fetch(url)
+        .then(resp => {
+            if (!resp.ok) throw new Error('Failed to fetch JSON');
+            return resp.json();
+        })
+        .then(data => {
+            lastJson = data;
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+            resultDiv.style.display = '';
+            document.getElementById('oyezSummary').innerHTML = '';
+            showKeysBtn.disabled = false;
+            document.getElementById('oyezSummary').innerHTML = renderOyezSummary(data);
+        })
+        .catch(err => {
+            resultDiv.textContent = 'Error: ' + err.message;
+            lastJson = null;
+            showKeysBtn.disabled = true;
+            document.getElementById('oyezSummary').innerHTML = '';
+        });
+});
+document.addEventListener('DOMContentLoaded', function() {
+    const oyezUrlInput = document.getElementById('oyezUrl');
+    if (oyezUrlInput && oyezUrlInput.value) {
+        // Auto-submit the form if the input is pre-filled (from /oyez?year=...&docket=...)
+        document.getElementById('oyezForm').dispatchEvent(new Event('submit'));
+    }
+});
+</script>
+<script src="/static/js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
