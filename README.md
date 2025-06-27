@@ -39,11 +39,23 @@ python supreme_justia.py 502
 
 - in a scotus document, usually sections of text are described as 'Opinion of the Court', 'Opinion of JUSTICE NAME', or 'JUSTCE NAME, dissenting'. There are likely steps to chunk the text into who's opinion it was related to. I think over time we could see how the opinions change by using corpus stuff.
 
-## Web App Demo
+## Web App Development
 
 ```bash
-python app.py
+cd ./app
+python application.py
 ```
+
 - check on http://localhost:5000, click the `wand` icon to get started with a sample query search. This is a proof of concept on how to leverage further corpus linguistic tools on this supreme court corpus from 1991 to 2025.
 - this pairs justia data with the oyez api to provide a more complete view of the case, including audio and transcripts. 
 
+## Deploying to AWS
+
+```bash
+terraform init
+terraform apply
+
+cd ./app
+eb init --profile=atn-developer
+eb deploy --profile=atn-developer
+```

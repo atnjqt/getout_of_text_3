@@ -3,3 +3,18 @@
 
 *.db
 __pycache__
+
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+app/.elasticbeanstalk/*
+
+.terraform
+.terraform/*
+!.terraform/*.tfstate
+!.terraform/*.tfstate.backup
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+iac/terraform.tfstate.backup

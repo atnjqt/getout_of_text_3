@@ -1,4 +1,4 @@
-# A simple flask app that 
+# A simple flask application that 
 # 1. reads the db file into a df
 # 2. performs cleanup and etl
 # 3. serves the df as a json endpoint
@@ -11,7 +11,7 @@ import pandas as pd
 import sqlite3
 from bs4 import BeautifulSoup
 
-app = Flask(__name__)
+application = Flask(__name__)
 
 def load_and_clean_db(db_name='pdf_texts.db'):
     conn = sqlite3.connect(db_name)
@@ -36,13 +36,13 @@ def load_and_clean_db(db_name='pdf_texts.db'):
 
 df = load_and_clean_db()
 
-@app.route('/data.json')
+@application.route('/data.json')
 def data_json():
     # Return the full DataFrame as JSON
     return df.to_json(orient='records')
 
 # give me a route that shows the df to_html with bootstrap styling
-@app.route('/data.html')
+@application.route('/data.html')
 def data_html():
     # Convert DataFrame to HTML with Bootstrap styling
     # show only one line of text per row
@@ -53,7 +53,7 @@ def data_html():
     html_table = display_df.to_html(classes='table table-striped table-bordered', index=False)
     return render_template('data.html', table=html_table)
 
-@app.route('/search', methods=['GET'])
+@application.route('/search', methods=['GET'])
 def search():
     query = request.args.get('query', '')
     if not query:
@@ -81,7 +81,7 @@ def search():
     return results[columns].to_json(orient='records')
 
 # oyez endpoint
-@app.route('/oyez')
+@application.route('/oyez')
 def oyez():
     year = request.args.get('year')
     docket = request.args.get('docket')
@@ -91,20 +91,22 @@ def oyez():
     return render_template('oyez.html', oyez_url=oyez_url)
 
 # docs
-@app.route('/docs')
+@application.route('/docs')
 def docs():
     return render_template('docs.html')
 
 # about
-@app.route('/about')
+@application.route('/about')
 def about():
     return render_template('about.html')
 
-@app.route('/')
+@application.route('/')
 def index():
     return render_template('index.html')
 
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    application.run(debug=True)
+
+
