@@ -16,7 +16,8 @@ from PyPDF2 import PdfReader
 import sys
 
 # Function to download the page and extract case links
-def extract_case_links(url):
+def extract_case_links(url, volume_number):
+    print('getting case links from:', url)
     response = requests.get(url)
     if response.status_code != 200:
         print(f"Failed to fetch page: {response.status_code}")
@@ -24,12 +25,13 @@ def extract_case_links(url):
         
     # Use BeautifulSoup to parse the HTML
     soup = BeautifulSoup(response.text, 'html.parser')
-    
-    # Find all links with the href pattern we're looking for
     links = []
-    case_pattern = re.compile(r'^/cases/federal/us/\d+/\d+/$')
-    for a_tag in soup.find_all('a', href=case_pattern):
-        links.append(a_tag['href'])
+    # Accept any link that starts with the volume path and has more after it
+    case_pattern = re.compile(rf'^/cases/federal/us/{volume_number}/[^/]+/?$')
+    for a_tag in soup.find_all('a', href=True):
+        href = a_tag['href']
+        if case_pattern.match(href):
+            links.append(href)
     
     # Get unique links only
     unique_links = list(set(links))
@@ -66,7 +68,7 @@ else:
 # Extract links from the Supreme Court cases page
 base_url = f"https://supreme.justia.com/cases/federal/us/{volume_number}/"
 print(f"Fetching cases from volume {volume_number}...")
-unique_case_links = extract_case_links(base_url)
+unique_case_links = extract_case_links(base_url, volume_number)
 
 # Display the found links and constructed PDF URLs
 case_urls = []
