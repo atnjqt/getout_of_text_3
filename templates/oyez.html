@@ -45,7 +45,101 @@ function renderOyezSummary(data) {
     ];
     let html = '<table class="table table-bordered table-dark table-striped">';
     html += '<tbody>';
+    // Render Case Name as a header row
+    if (data['name']) {
+        html += `<tr><th colspan="2"><h3 class="mb-0">${data['name']}</h3></th></tr>`;
+    }
+    // Decided By & Ideology section (move up, right after Case Name)
+    if (data['decided_by'] && typeof data['decided_by'] === 'object' && Array.isArray(data['decided_by'].members)) {
+        const court = data['decided_by'];
+        // Map ideology scores to justice names (from decisions)
+        let ideologyMap = {};
+        if (Array.isArray(data['decisions'])) {
+            data['decisions'].forEach(decision => {
+                if (Array.isArray(decision.votes)) {
+                    decision.votes.forEach(vote => {
+                        if (vote.member && vote.member.name && vote.ideology !== undefined && vote.ideology !== null) {
+                            ideologyMap[vote.member.name] = vote.ideology;
+                        }
+                    });
+                }
+            });
+        }
+        // Prepare justices with ideology for plotting
+        let justicesWithIdeology = court.members.map(justice => {
+            return {
+                name: justice.name,
+                href: justice.href,
+                thumbnail: justice.thumbnail && justice.thumbnail.href,
+                role: justice.roles && justice.roles[0] && justice.roles[0].role_title,
+                ideology: ideologyMap[justice.name]
+            };
+        }).filter(j => j.ideology !== undefined);
+        // Sort by ideology (most negative = left, most positive = right)
+        justicesWithIdeology.sort((a, b) => a.ideology - b.ideology);
+        // Plot: row of thumbnails spaced by ideology
+        let plotHtml = '';
+        // Helper to get last name without suffixes
+        function getLastNameNoSuffix(fullName) {
+            if (!fullName) return '';
+            let parts = fullName.trim().split(' ');
+            let last = parts[parts.length - 1];
+            // Remove common suffixes
+            const suffixes = ['Jr', 'Jr.', 'Sr', 'Sr.', 'II', 'III', 'IV', 'V'];
+            if (suffixes.includes(last.replace(/\.$/, ''))) {
+                last = parts[parts.length - 2] || last;
+            }
+            // Remove trailing comma if present
+            return last.replace(/,$/, '');
+        }
+        if (justicesWithIdeology.length > 0) {
+            plotHtml += '<div class="d-flex justify-content-between align-items-end mb-3" style="gap:12px;overflow-x:auto;">';
+            justicesWithIdeology.forEach(j => {
+                plotHtml += `<div class="text-center" style="min-width:60px;">
+                    <a href="${j.href}" target="_blank" rel="noopener">
+                        <img src="${j.thumbnail}" alt="${j.name}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;border:2px solid #888;">
+                    </a><br>
+                    <span class="small">${getLastNameNoSuffix(j.name)}</span><br>
+                    <span class="${j.ideology > 0 ? 'text-danger' : (j.ideology < 0 ? 'text-primary' : 'text-muted')}">${j.ideology.toFixed(2)}</span>
+                </div>`;
+            });
+            plotHtml += '</div>';
+        }
+        let courtHtml = plotHtml;
+        courtHtml += `<b>${court.name || ''}</b>`;
+        if (court.href) {
+            courtHtml += ` (<a href="${court.href}" target="_blank" rel="noopener">Oyez</a>)`;
+        }
+        // Add toggle for the detailed justice table
+        courtHtml += `
+        <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#justiceTableCollapse" aria-expanded="false" aria-controls="justiceTableCollapse">
+            Show/Hide Justice Table
+        </button>
+        <div class="collapse" id="justiceTableCollapse">
+            <ul class="list-group mt-2 mb-0">`;
+        court.members.forEach(justice => {
+            courtHtml += `<li class="list-group-item bg-dark text-light border-secondary d-flex align-items-center">`;
+            if (justice.thumbnail && justice.thumbnail.href) {
+                courtHtml += `<img src="${justice.thumbnail.href}" alt="${justice.name}" style="width:32px;height:32px;object-fit:cover;border-radius:50%;margin-right:8px;">`;
+            }
+            courtHtml += `<a href="${justice.href}" target="_blank" rel="noopener" class="text-info">${justice.name}</a>`;
+            if (justice.roles && justice.roles[0] && justice.roles[0].role_title) {
+                courtHtml += ` <span class="text-muted small ms-2">(${justice.roles[0].role_title})</span>`;
+            }
+            // Show ideology score if available
+            if (ideologyMap[justice.name] !== undefined) {
+                let score = ideologyMap[justice.name];
+                let color = score > 0 ? 'text-danger' : (score < 0 ? 'text-primary' : 'text-muted');
+                courtHtml += ` <span class="ms-2 ${color}">[${score.toFixed(2)}]</span>`;
+            }
+            courtHtml += '</li>';
+        });
+        courtHtml += '</ul></div>';
+        html += `<tr><th>Decided By & Ideology</th><td>${courtHtml}</td></tr>`;
+    }
+    // Render all fields except Case Name, Justia URL, Oyez API Link, and written_opinion
     fields.forEach(f => {
+        if (f.key === 'name' || f.key === 'justia_url' || f.key === 'href' || f.key === 'written_opinion') return;
         let val = data[f.key];
         if (val === undefined || val === null || val === '') return;
         if (f.isUrl) {
@@ -55,7 +149,18 @@ function renderOyezSummary(data) {
         }
         html += `<tr><th>${f.label}</th><td>${val}</td></tr>`;
     });
-    // Add written_opinion section above Decided By
+    // Render Justia URL and Oyez API Link at the end
+    ['justia_url', 'href'].forEach(key => {
+        let f = fields.find(f => f.key === key);
+        if (!f) return;
+        let val = data[key];
+        if (val === undefined || val === null || val === '') return;
+        if (f.isUrl) {
+            val = `<a href="${val}" target="_blank" rel="noopener">${val}</a>`;
+        }
+        html += `<tr><th>${f.label}</th><td>${val}</td></tr>`;
+    });
+    // Written Opinions at the very end
     if (Array.isArray(data['written_opinion']) && data['written_opinion'].length > 0) {
         // Sort so 'Opinion of the Court' (majority) comes first
         const sortedOpinions = data['written_opinion'].slice().sort((a, b) => {
@@ -85,30 +190,6 @@ function renderOyezSummary(data) {
         });
         opinionsHtml += '</ul>';
         html += `<tr><th>Written Opinions</th><td>${opinionsHtml}</td></tr>`;
-    }
-    // Add decided_by court and justices
-    if (data['decided_by'] && typeof data['decided_by'] === 'object') {
-        const court = data['decided_by'];
-        let courtHtml = `<b>${court.name || ''}</b>`;
-        if (court.href) {
-            courtHtml += ` (<a href="${court.href}" target="_blank" rel="noopener">Oyez</a>)`;
-        }
-        if (Array.isArray(court.members)) {
-            courtHtml += '<ul class="list-group mt-2">';
-            court.members.forEach(justice => {
-                courtHtml += `<li class="list-group-item bg-dark text-light border-secondary d-flex align-items-center">`;
-                if (justice.thumbnail && justice.thumbnail.href) {
-                    courtHtml += `<img src="${justice.thumbnail.href}" alt="${justice.name}" style="width:32px;height:32px;object-fit:cover;border-radius:50%;margin-right:8px;">`;
-                }
-                courtHtml += `<a href="${justice.href}" target="_blank" rel="noopener" class="text-info">${justice.name}</a>`;
-                if (justice.roles && justice.roles[0] && justice.roles[0].role_title) {
-                    courtHtml += ` <span class="text-muted small ms-2">(${justice.roles[0].role_title})</span>`;
-                }
-                courtHtml += '</li>';
-            });
-            courtHtml += '</ul>';
-        }
-        html += `<tr><th>Decided By</th><td>${courtHtml}</td></tr>`;
     }
     html += '</tbody></table>';
     return html;
