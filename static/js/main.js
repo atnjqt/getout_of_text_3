@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     let oyezUrl = '';
                     if (year && docket) {
                         oyezUrl = `/oyez?year=${encodeURIComponent(year)}&docket=${encodeURIComponent(docket)}`;
-                        html += `<td><a href="${oyezUrl}" target="_blank" rel="noopener">Oyez</a></td>`;
+                        html += `<td><a href="${oyezUrl}" rel="noopener">Oyez</a></td>`;
                     } else {
                         html += '<td></td>';
                     }

@@ -43,7 +43,7 @@ function renderOyezSummary(data) {
         { label: 'Justia URL', key: 'justia_url', isUrl: true },
         { label: 'Oyez API Link', key: 'href', isUrl: true },
     ];
-    let html = '<table class="table table-bordered table-dark table-striped">';
+    let html = '<div class="table-responsive" style="overflow-x:auto;width:100%"><table class="table table-bordered table-dark table-striped">';
     html += '<tbody>';
     // Render Case Name as a header row
     if (data['name']) {
@@ -191,7 +191,7 @@ function renderOyezSummary(data) {
         opinionsHtml += '</ul>';
         html += `<tr><th>Written Opinions</th><td>${opinionsHtml}</td></tr>`;
     }
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     return html;
 }
 document.getElementById('oyezForm').addEventListener('submit', function(e) {
