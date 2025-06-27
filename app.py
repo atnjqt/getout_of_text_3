@@ -90,6 +90,11 @@ def oyez():
         oyez_url = f'https://api.oyez.org/cases/{year}/{docket}'
     return render_template('oyez.html', oyez_url=oyez_url)
 
+# docs
+@app.route('/docs')
+def docs():
+    return render_template('docs.html')
+
 # about
 @app.route('/about')
 def about():
