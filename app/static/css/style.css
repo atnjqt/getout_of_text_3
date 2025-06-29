@@ -162,3 +162,27 @@ body.dark-mode .proposal-card a {
     color: #0dcaf0 !important;
     text-decoration: underline;
 }
+
+/* KWIC button: blue in light mode, orange in dark mode */
+.btn-kwic-mode {
+    background-color: #0d6efd;
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    box-shadow: 0 2px 8px #0d6efd33;
+}
+.btn-kwic-mode:hover, .btn-kwic-mode:focus {
+    background-color: #0b5ed7;
+    color: #fff;
+}
+body.dark-mode .btn-kwic-mode {
+    background-color: #fd7e14 !important;
+    color: #fff !important;
+    border: none !important;
+    font-weight: 700;
+    box-shadow: 0 2px 8px #fd7e1433;
+}
+body.dark-mode .btn-kwic-mode:hover, body.dark-mode .btn-kwic-mode:focus {
+    background-color: #e8590c !important;
+    color: #fff !important;
+}

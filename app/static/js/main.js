@@ -83,14 +83,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // KWIC rendering
     function renderKwicTable(data, query) {
+        const isDark = document.body.classList.contains('dark-mode');
+        const kwicClass = isDark ? 'alert-warning' : 'alert-info';
         if (!data.length) {
-            dataTable.innerHTML = '<div class="alert alert-warning">No KWIC results found.</div>';
+            dataTable.innerHTML = `<div class="alert ${kwicClass}">No KWIC results found.</div>`;
             recordCount.textContent = '';
             return;
         }
-        let html = '<table class="table table-striped table-bordered"><thead><tr><th>Left</th><th>Keyword</th><th>Right</th></tr></thead><tbody>';
+        let html = `<table class="table table-striped table-bordered"><thead><tr><th style="width:40%">Left</th><th style="width:20%; white-space:nowrap; text-align:center;">Keyword</th><th style="width:40%">Right</th></tr></thead><tbody>`;
         for (const row of data) {
-            html += `<tr><td class="text-end kwic-left">${row.left}</td><td class="kwic-keyword">${row.keyword}</td><td class="kwic-right">${row.right}</td></tr>`;
+            let keywordHtml = row.keyword;
+            if (query) {
+                // Highlight all matches of the query in the keyword column (case-insensitive)
+                const safeQuery = query.replace(/[.*+?^${}()|[\\]\/]/g, '\\$&');
+                const regex = new RegExp('(' + safeQuery + ')', 'gi');
+                keywordHtml = keywordHtml.replace(regex, '<span class="highlighted-term">$1</span>');
+            }
+            html += `<tr><td class="text-end kwic-left">${row.left}</td><td class="kwic-keyword text-center">${keywordHtml}</td><td class="kwic-right">${row.right}</td></tr>`;
         }
         html += '</tbody></table>';
         dataTable.innerHTML = html;
