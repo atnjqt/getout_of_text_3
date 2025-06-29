@@ -1,6 +1,8 @@
 .venv
 .venv/
 
+.env
+
 *.db
 __pycache__
 
@@ -18,3 +20,4 @@ app/.elasticbeanstalk/*
 .terraform.lock.hcl
 .terraform.tfstate.lock.info
 iac/terraform.tfstate.backup
+*/terraform.tfstate

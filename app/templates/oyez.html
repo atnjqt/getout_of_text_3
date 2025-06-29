@@ -19,7 +19,11 @@
     </form>
     <div class="mb-3">
         <button class="btn btn-secondary" id="showKeysBtn" disabled>Show Top-Level Keys</button>
+        <button class="btn btn-warning ms-2" id="aiSummaryBtn" disabled>
+            <i class="fas fa-robot me-1"></i>Summarize with AI
+        </button>
     </div>
+     <div id="aiSummaryResult" class="alert alert-info d-none mb-4"></div>
     <div id="oyezSummary" class="mb-4"></div>
     <div id="oyezResult" class="bg-dark text-light p-3 rounded" style="min-height:200px; font-family:monospace; white-space:pre-wrap; word-break:break-all;"></div>
     <div id="oyezKeys" class="mt-3"></div>
@@ -215,6 +219,7 @@ document.getElementById('oyezForm').addEventListener('submit', function(e) {
             document.getElementById('oyezSummary').innerHTML = '';
             showKeysBtn.disabled = false;
             document.getElementById('oyezSummary').innerHTML = renderOyezSummary(data);
+            document.getElementById('aiSummaryBtn').disabled = false;
         })
         .catch(err => {
             resultDiv.textContent = 'Error: ' + err.message;
@@ -283,6 +288,81 @@ document.getElementById('oyezForm').addEventListener('submit', function(e) {
             showKeysBtn.disabled = true;
             document.getElementById('oyezSummary').innerHTML = '';
         });
+});
+document.getElementById('aiSummaryBtn').addEventListener('click', function() {
+    if (!lastJson) return;
+    // Extract summary and ideology scores from lastJson
+    let summary = '';
+    if (lastJson['description']) summary += lastJson['description'] + '\n';
+    if (lastJson['facts_of_the_case']) summary += lastJson['facts_of_the_case'] + '\n';
+    if (lastJson['conclusion']) summary += lastJson['conclusion'] + '\n';
+    // Ideology scores
+    let ideology_scores = [];
+    if (lastJson['decided_by'] && Array.isArray(lastJson['decided_by'].members)) {
+        const court = lastJson['decided_by'];
+        let ideologyMap = {};
+        if (Array.isArray(lastJson['decisions'])) {
+            lastJson['decisions'].forEach(decision => {
+                if (Array.isArray(decision.votes)) {
+                    decision.votes.forEach(vote => {
+                        if (vote.member && vote.member.name && vote.ideology !== undefined && vote.ideology !== null) {
+                            ideologyMap[vote.member.name] = vote.ideology;
+                        }
+                    });
+                }
+            });
+        }
+        ideology_scores = court.members.map(justice => ({
+            name: justice.name,
+            ideology: ideologyMap[justice.name]
+        })).filter(j => j.ideology !== undefined);
+    }
+    const btn = document.getElementById('aiSummaryBtn');
+    const resultDiv = document.getElementById('aiSummaryResult');
+    btn.disabled = true;
+    resultDiv.classList.remove('d-none', 'alert-danger');
+    resultDiv.classList.add('alert-info');
+    resultDiv.textContent = 'Generating summary...';
+    fetch('/api/oyez-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ summary, ideology_scores })
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        if (data.summary) {
+            let summaryText = data.summary;
+            // Try to parse as JSON if possible
+            let rendered = '';
+            try {
+                const parsed = JSON.parse(summaryText);
+                if (parsed.choices && Array.isArray(parsed.choices) && parsed.choices[0].text) {
+                    let aiText = parsed.choices[0].text.trim();
+                    // Remove leading 'Use this format:' and following newlines if present
+                    aiText = aiText.replace(/^Use this format:\s*\n?/i, '');
+                    // Remove trailing 'Stop reason: stop' and anything after
+                    aiText = aiText.split(/Stop reason: stop/i)[0].trim();
+                    rendered += '<div class="mb-2"><b>AI Summary:</b></div>';
+                    rendered += `<div class=\"mb-2\" style=\"white-space:pre-wrap;word-break:break-word;overflow-x:auto;max-width:100%\"><span>${aiText}</span></div>`;
+                } else {
+                    rendered = `<div style=\"white-space:pre-wrap;word-break:break-word;max-width:100%\"><span>${summaryText}</span></div>`;
+                }
+            } catch (e) {
+                rendered = `<div style=\"white-space:pre-wrap;word-break:break-word;max-width:100%\"><span>${summaryText}</span></div>`;
+            }
+            resultDiv.innerHTML = rendered;
+        } else {
+            resultDiv.textContent = 'No summary returned.';
+        }
+    })
+    .catch(err => {
+        resultDiv.textContent = 'Error: ' + err.message;
+        resultDiv.classList.remove('alert-info');
+        resultDiv.classList.add('alert-danger');
+    })
+    .finally(() => {
+        btn.disabled = false;
+    });
 });
 document.addEventListener('DOMContentLoaded', function() {
     const oyezUrlInput = document.getElementById('oyezUrl');

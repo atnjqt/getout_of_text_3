@@ -81,6 +81,58 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // KWIC rendering
+    function renderKwicTable(data, query) {
+        if (!data.length) {
+            dataTable.innerHTML = '<div class="alert alert-warning">No KWIC results found.</div>';
+            recordCount.textContent = '';
+            return;
+        }
+        let html = '<table class="table table-striped table-bordered"><thead><tr><th>Left</th><th>Keyword</th><th>Right</th></tr></thead><tbody>';
+        for (const row of data) {
+            html += `<tr><td class="text-end kwic-left">${row.left}</td><td class="kwic-keyword">${row.keyword}</td><td class="kwic-right">${row.right}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        dataTable.innerHTML = html;
+        recordCount.textContent = `KWIC: ${data.length} hits.`;
+    }
+
+    // Collocates rendering
+    function renderCollocatesTable(data) {
+        if (!data.length) {
+            dataTable.innerHTML = '<div class="alert alert-warning">No collocates found.</div>';
+            recordCount.textContent = '';
+            return;
+        }
+        let html = '<table class="table table-striped table-bordered"><thead><tr><th>Word</th><th>Count</th></tr></thead><tbody>';
+        for (const row of data) {
+            html += `<tr><td class="colloc-word">${row.word}</td><td class="colloc-count">${row.count}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        dataTable.innerHTML = html;
+        recordCount.textContent = `Top ${data.length} collocates.`;
+    }
+
+    // Button event listeners
+    document.getElementById('kwicBtn').addEventListener('click', function() {
+        const query = input.value.trim();
+        if (!query) return;
+        const leftChars = document.getElementById('kwicLeftChars').value || 50;
+        const rightChars = document.getElementById('kwicRightChars').value || 50;
+        dataTable.innerHTML = '<div class="text-center text-muted">Loading KWIC...</div>';
+        fetch(`/kwic?query=${encodeURIComponent(query)}&left_chars=${leftChars}&right_chars=${rightChars}`)
+            .then(resp => resp.json())
+            .then(data => renderKwicTable(data, query));
+    });
+    document.getElementById('collocatesBtn').addEventListener('click', function() {
+        const query = input.value.trim();
+        if (!query) return;
+        dataTable.innerHTML = '<div class="text-center text-muted">Loading collocates...</div>';
+        fetch(`/collocates?query=${encodeURIComponent(query)}&window=5`)
+            .then(resp => resp.json())
+            .then(data => renderCollocatesTable(data));
+    });
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         fetchData(input.value);
