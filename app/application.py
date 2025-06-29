@@ -222,8 +222,42 @@ def collocates():
                 for w in left + right:
                     if w.strip().isalpha() and w.lower() != query.lower():
                         colloc_counter[w.lower()] += 1
-    top_collocates = colloc_counter.most_common(30)
+    # Allow user to specify how many top collocates to return (default 30)
+    try:
+        top_n = int(request.args.get('top_n', 30))
+        if top_n < 1 or top_n > 100:
+            top_n = 30
+    except (TypeError, ValueError):
+        top_n = 30
+    top_collocates = colloc_counter.most_common(top_n)
     return jsonify([{'word': w, 'count': c} for w, c in top_collocates])
+
+# Async POS tagging endpoint
+@application.route('/collocates-pos', methods=['POST'])
+def collocates_pos():
+    import nltk
+    from nltk import pos_tag
+    data = request.json
+    words = data.get('words', [])
+    # Map POS tags to human-readable names
+    pos_map = {
+        'CC': 'coordinating conjunction', 'CD': 'cardinal digit', 'DT': 'determiner', 'EX': 'existential there',
+        'FW': 'foreign word', 'IN': 'preposition/subordinating conjunction', 'JJ': 'adjective', 'JJR': 'adjective, comparative',
+        'JJS': 'adjective, superlative', 'LS': 'list marker', 'MD': 'modal', 'NN': 'noun, singular', 'NNS': 'noun plural',
+        'NNP': 'proper noun, singular', 'NNPS': 'proper noun, plural', 'PDT': 'predeterminer', 'POS': 'possessive ending',
+        'PRP': 'personal pronoun', 'PRP$': 'possessive pronoun', 'RB': 'adverb', 'RBR': 'adverb, comparative',
+        'RBS': 'adverb, superlative', 'RP': 'particle', 'TO': 'to', 'UH': 'interjection', 'VB': 'verb, base form',
+        'VBD': 'verb, past tense', 'VBG': 'verb, gerund/present participle', 'VBN': 'verb, past participle',
+        'VBP': 'verb, sing. present, non-3d', 'VBZ': 'verb, 3rd person sing. present', 'WDT': 'wh-determiner',
+        'WP': 'wh-pronoun', 'WP$': 'possessive wh-pronoun', 'WRB': 'wh-adverb'
+    }
+    def pos_with_name(tag):
+        if not tag:
+            return ''
+        name = pos_map.get(tag, '')
+        return f"{tag} ({name})" if name else tag
+    tagged = pos_tag(words)
+    return jsonify([{ 'word': w, 'pos': pos_with_name(tag) } for w, tag in tagged])
 
 if __name__ == '__main__':
     application.run(debug=True)

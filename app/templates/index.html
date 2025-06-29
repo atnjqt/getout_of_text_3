@@ -16,17 +16,46 @@
         <div class="mt-2 d-flex flex-wrap gap-2">
             <button type="submit" class="btn btn-primary">Search</button>
             <button type="button" class="btn btn-kwic-mode" id="kwicBtn">KWIC</button>
-            <button type="button" class="btn btn-outline-secondary" id="collocatesBtn">Collocates</button>
+            <button type="button" class="btn btn-collocates-mode" id="collocatesBtn">Collocates</button>
             {% include 'instructions.html' %}
         </div>
-        <div class="mt-2" id="kwicCharWindowBox">
+        <div class="mt-2" id="kwicCharWindowBox" style="display:none;">
             <label for="kwicLeftChars" class="form-label mb-0">KWIC Left chars:</label>
             <input type="number" id="kwicLeftChars" class="form-control d-inline-block w-auto mx-2" value="50" min="1" style="width: 80px;">
             <label for="kwicRightChars" class="form-label mb-0">Right chars:</label>
             <input type="number" id="kwicRightChars" class="form-control d-inline-block w-auto mx-2" value="50" min="1" style="width: 80px;">
             <small class="text-muted">Set number of characters to display left/right of keyword for KWIC.</small>
         </div>
+        <div class="mt-2 d-flex flex-wrap gap-2 align-items-center" id="collocatesPOSFilterBox" style="display:none;">
+            <div id="collocatesFiltersRow" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; width: 100%;">
+                <label class="form-label mb-0 me-2">Collocate window:</label>
+                <input type="number" id="collocatesWindow" class="form-control d-inline-block w-auto me-3" value="5" min="1" max="20" style="width: 80px;">
+                <label class="form-label mb-0 me-2">Top N:</label>
+                <input type="number" id="collocatesTopN" class="form-control d-inline-block w-auto me-3" value="30" min="1" max="100" style="width: 80px;">
+                <label class="form-label mb-0 me-2">Filter POS:</label>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="collocatesPOSDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Select POS
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="collocatesPOSDropdown" id="collocatesPOSDropdownMenu" style="max-height: 300px; overflow-y: auto;">
+                        <li>
+                            <label class="dropdown-item" onclick="event.stopPropagation();">
+                                <input type="checkbox" id="collocatesSelectAllChk" class="form-check-input me-2"> Select All
+                            </label>
+                            <label class="dropdown-item" onclick="event.stopPropagation();">
+                                <input type="checkbox" id="collocatesUnselectAllChk" class="form-check-input me-2"> Unselect All
+                            </label>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- POS checkboxes will be rendered here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
     </form>
+    <div class="mt-2" id="collocatesPOSLoadBox" style="display:none;">
+        <button id="loadCollocPOSBtn" class="btn btn-outline-info"><i class="fas fa-magic me-1"></i>Load Part of Speech Tags</button>
+    </div>
     <div class="table-responsive" id="dataTable">
         <!-- Table will be loaded here by JS -->
     </div>
