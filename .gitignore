@@ -1,10 +1,17 @@
 .venv
 .venv/
+.venv_dev/
 
 .env
 
 *.db
 __pycache__
+
+# pypi distribution stuff
+dist/
+build/
+*.egg-info
+*.bak
 
 
 # Elastic Beanstalk Files
