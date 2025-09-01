@@ -1,20 +1,49 @@
 import pandas as pd
 import os
+import re
+from collections import defaultdict, Counter
+try:
+    import nltk
+    NLTK_AVAILABLE = True
+except ImportError:
+    NLTK_AVAILABLE = False
+    print("⚠️ NLTK not available. Some features may use fallback methods.")
 
 class LegalCorpus:
     """
     Main class for handling legal corpora and BYU datasets.
+    
+    This class provides comprehensive functionality for working with COCA (Corpus of Contemporary 
+    American English) and other legal text corpora, designed specifically for legal scholars 
+    and researchers working on open science projects.
     """
-    def __init__(self, data_dir):
+    
+    def __init__(self, data_dir=None):
         """
         Initialize with the directory containing BYU data files.
+        
+        Parameters:
+        - data_dir: Directory containing corpus files (optional)
         """
         self.data_dir = data_dir
+        self.corpora = {}
+        self._ensure_nltk_data()
+
+    def _ensure_nltk_data(self):
+        """Ensure required NLTK data is available."""
+        if NLTK_AVAILABLE:
+            try:
+                nltk.download('punkt_tab', quiet=True)
+                nltk.download('stopwords', quiet=True)
+            except:
+                print("⚠️ Could not download NLTK data. Some features may be limited.")
 
     def list_files(self):
         """
         List all files in the data directory.
         """
+        if not self.data_dir:
+            raise ValueError("No data directory specified. Set data_dir first.")
         return [f for f in os.listdir(self.data_dir) if os.path.isfile(os.path.join(self.data_dir, f))]
 
     def read_byu_file(self, filename, **kwargs):
@@ -22,6 +51,9 @@ class LegalCorpus:
         Read a BYU data file into a pandas DataFrame.
         Supports CSV and TSV formats.
         """
+        if not self.data_dir:
+            raise ValueError("No data directory specified. Set data_dir first.")
+            
         file_path = os.path.join(self.data_dir, filename)
         if filename.endswith('.csv'):
             return pd.read_csv(file_path, **kwargs)
@@ -30,12 +62,327 @@ class LegalCorpus:
         else:
             raise ValueError("Unsupported file format. Please use CSV or TSV.")
 
-    # Placeholder for future KWIC, frequency, concordance methods
-    # def kwic(self, ...):
-    #     pass
-    # def keyword_frequencies(self, ...):
-    #     pass
-    # def collocates(self, ...):
-    #     pass
-    # def concordance(self, ...):
-    #     pass
+    def read_corpora(self, dir_of_text_files, corpora_name, genre_list=None):
+        """
+        Read COCA corpus files from a directory and organize by genre.
+        
+        Parameters:
+        - dir_of_text_files: Directory containing the text files
+        - corpora_name: Name identifier for this corpus collection
+        - genre_list: List of genres to process (default: COCA standard genres)
+        
+        Returns:
+        - Dictionary with genre keys and DataFrames as values
+        """
+        if genre_list is None:
+            genre_list = ['acad', 'blog', 'fic', 'mag', 'news', 'spok', 'tvm', 'web']
+        
+        print(f"📚 Loading {corpora_name} corpus from {dir_of_text_files}")
+        print("=" * 60)
+        
+        corpus_data = {}
+        
+        for genre in genre_list:
+            print(f"📂 Processing {genre}...")
+            
+            try:
+                # Look for both db_ and text_ prefixed files
+                for prefix in ['db_', 'text_', '']:
+                    file_pattern = f"{prefix}{genre}.txt"
+                    file_path = os.path.join(dir_of_text_files, file_pattern)
+                    
+                    if os.path.exists(file_path):
+                        corpus_data[genre] = pd.read_csv(
+                            file_path,
+                            sep="\t",
+                            header=None,
+                            names=["text"],
+                            on_bad_lines='skip',
+                            quoting=3
+                        )
+                        print(f"  ✅ {file_pattern}: {corpus_data[genre].shape}")
+                        break
+                else:
+                    print(f"  ❌ No file found for {genre}")
+                    
+            except Exception as e:
+                print(f"  ❌ Error reading {genre}: {e}")
+        
+        # Store in the corpus collection
+        self.corpora[corpora_name] = corpus_data
+        
+        print(f"\n🎯 SUMMARY:")
+        print(f"   - {corpora_name}: {len(corpus_data)} genres loaded")
+        print(f"   - Total corpora in collection: {len(self.corpora)}")
+        
+        return corpus_data
+
+    def search_keyword_corpus(self, keyword, db_dict, case_sensitive=False, show_context=True, context_words=5):
+        """
+        Search for a keyword across all COCA genres and display results elegantly.
+        
+        Parameters:
+        - keyword: The word/phrase to search for
+        - db_dict: Dictionary of DataFrames (genre -> DataFrame)
+        - case_sensitive: Whether to perform case-sensitive search
+        - show_context: Whether to show surrounding context
+        - context_words: Number of words to show on each side for context
+        
+        Returns:
+        - Dictionary with search results by genre
+        """
+        
+        print(f"🔍 COCA Corpus Search: '{keyword}'")
+        print("=" * 60)
+        
+        results = defaultdict(list)
+        total_hits = 0
+        
+        # Prepare search pattern
+        if case_sensitive:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
+        else:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+        
+        # Search through each genre
+        for genre, df in db_dict.items():
+            genre_hits = 0
+            print(f"\n📚 {genre.upper()} Genre:")
+            print("-" * 30)
+            
+            for idx, text in df['text'].items():
+                text_str = str(text)
+                matches = pattern.findall(text_str)
+                
+                if matches:
+                    genre_hits += len(matches)
+                    
+                    if show_context:
+                        # Find all match positions and show context
+                        for match in pattern.finditer(text_str):
+                            start, end = match.span()
+                            
+                            # Find word boundaries for context
+                            words_before_match = text_str[:start].split()
+                            words_after_match = text_str[end:].split()
+                            
+                            # Build context
+                            context_before = ' '.join(words_before_match[-context_words:]) if words_before_match else ""
+                            matched_word = text_str[start:end]
+                            context_after = ' '.join(words_after_match[:context_words]) if words_after_match else ""
+                            
+                            # Format the context nicely
+                            context_display = f"...{context_before} **{matched_word}** {context_after}..."
+                            context_display = context_display.replace("...", "").strip()
+                            
+                            results[genre].append({
+                                'text_id': idx,
+                                'match': matched_word,
+                                'context': context_display,
+                                'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
+                            })
+                            
+                            print(f"  📝 Text {idx}: {context_display}")
+                    else:
+                        results[genre].append({
+                            'text_id': idx,
+                            'matches': len(matches),
+                            'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
+                        })
+            
+            if genre_hits > 0:
+                print(f"  ✅ Found {genre_hits} occurrence(s) in {genre}")
+            else:
+                print(f"  ❌ No matches found in {genre}")
+                
+            total_hits += genre_hits
+        
+        print(f"\n🎯 SUMMARY:")
+        print(f"Total hits across all genres: {total_hits}")
+        print(f"Genres with matches: {len([g for g in results if results[g]])}")
+        
+        return dict(results)
+
+    def keyword_frequency_analysis(self, keyword, db_dict, case_sensitive=False):
+        """
+        Analyze frequency of keyword across genres.
+        
+        Parameters:
+        - keyword: The word to analyze
+        - db_dict: Dictionary of DataFrames (genre -> DataFrame)
+        - case_sensitive: Whether to perform case-sensitive search
+        
+        Returns:
+        - Dictionary with frequency data by genre
+        """
+        print(f"📊 Frequency Analysis for '{keyword}'")
+        print("=" * 50)
+        
+        freq_data = {}
+        
+        if case_sensitive:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
+        else:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+        
+        for genre, df in db_dict.items():
+            total_words = 0
+            keyword_count = 0
+            
+            for text in df['text']:
+                text_str = str(text)
+                words = text_str.split()
+                total_words += len(words)
+                keyword_count += len(pattern.findall(text_str))
+            
+            # Calculate frequency per 1000 words
+            freq_per_1000 = (keyword_count / total_words * 1000) if total_words > 0 else 0
+            
+            freq_data[genre] = {
+                'count': keyword_count,
+                'total_words': total_words,
+                'freq_per_1000': round(freq_per_1000, 3)
+            }
+            
+            print(f"{genre:8s}: {keyword_count:4d} occurrences | {freq_per_1000:6.3f} per 1000 words")
+        
+        return freq_data
+
+    def find_collocates(self, keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
+        """
+        Find words that frequently appear near the keyword (collocates).
+        
+        Parameters:
+        - keyword: Target word to find collocates for
+        - db_dict: Dictionary of DataFrames
+        - window_size: Number of words to look at on each side
+        - min_freq: Minimum frequency for a word to be considered a collocate
+        - case_sensitive: Whether to perform case-sensitive search
+        
+        Returns:
+        - Dictionary with collocate data
+        """
+        print(f"🔗 Collocate Analysis for '{keyword}' (window: ±{window_size} words)")
+        print("=" * 60)
+        
+        if case_sensitive:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
+        else:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+        
+        all_collocates = Counter()
+        genre_collocates = {}
+
+        for genre, df in db_dict.items():
+            print(f"\n📚 {genre.upper()} Genre Collocates:")
+            
+            # Create a fresh counter for each genre
+            genre_counter = Counter()
+            keyword_instances = 0
+            
+            for text in df['text']:
+                text_str = str(text).lower() if not case_sensitive else str(text)
+                
+                # Use NLTK if available, fallback to split
+                if NLTK_AVAILABLE:
+                    try:
+                        words = nltk.word_tokenize(text_str)
+                    except:
+                        words = text_str.split()
+                else:
+                    words = text_str.split()
+                
+                # Find all positions of the keyword
+                keyword_positions = []
+                for i, word in enumerate(words):
+                    if (not case_sensitive and word.lower() == keyword.lower()) or (case_sensitive and word == keyword):
+                        keyword_positions.append(i)
+                
+                keyword_instances += len(keyword_positions)
+                
+                # Extract collocates around each keyword occurrence
+                for pos in keyword_positions:
+                    start = max(0, pos - window_size)
+                    end = min(len(words), pos + window_size + 1)
+                    
+                    # Get surrounding words (excluding the keyword itself)
+                    context_words = words[start:pos] + words[pos+1:end]
+                    
+                    # Filter out punctuation and very short words
+                    context_words = [w for w in context_words if w.isalpha() and len(w) > 2]
+                    
+                    genre_counter.update(context_words)
+                    all_collocates.update(context_words)
+            
+            # Store the results for this genre
+            genre_collocates[genre] = genre_counter
+            
+            # Display top collocates for this genre
+            top_collocates = genre_counter.most_common(10)
+            if top_collocates:
+                print(f"  Found {keyword_instances} instances of '{keyword}' in {genre}")
+                # Show all results, but mark those below min_freq
+                for word, freq in top_collocates:
+                    marker = "  " if freq >= min_freq else "* "
+                    print(f"{marker}{word:15s}: {freq:3d} times")
+            else:
+                print(f"  Found {keyword_instances} instances, but no significant collocates")
+        
+        print(f"\n🎯 TOP OVERALL COLLOCATES (min frequency: {min_freq}):")
+        print("-" * 40)
+        top_overall = all_collocates.most_common(20)
+        for word, freq in top_overall:
+            if freq >= min_freq:
+                print(f"{word:15s}: {freq:3d} occurrences")
+            
+        return {
+            'all_collocates': dict(all_collocates),
+            'by_genre': dict(genre_collocates),
+        }
+
+    def get_corpus(self, corpora_name):
+        """
+        Get a previously loaded corpus by name.
+        
+        Parameters:
+        - corpora_name: Name of the corpus to retrieve
+        
+        Returns:
+        - Dictionary of DataFrames for the requested corpus
+        """
+        if corpora_name not in self.corpora:
+            raise ValueError(f"Corpus '{corpora_name}' not found. Available: {list(self.corpora.keys())}")
+        return self.corpora[corpora_name]
+
+    def list_corpora(self):
+        """
+        List all loaded corpora.
+        
+        Returns:
+        - List of corpus names
+        """
+        return list(self.corpora.keys())
+
+    def corpus_summary(self):
+        """
+        Display a summary of all loaded corpora.
+        """
+        print("📚 CORPUS COLLECTION SUMMARY")
+        print("=" * 50)
+        
+        if not self.corpora:
+            print("No corpora loaded.")
+            return
+            
+        for name, corpus in self.corpora.items():
+            print(f"\n🔍 {name}:")
+            for genre, df in corpus.items():
+                total_texts = len(df)
+                total_words = sum(len(str(text).split()) for text in df['text'])
+                print(f"  {genre:8s}: {total_texts:6d} texts, ~{total_words:8d} words")
+
+    # Legacy method for backward compatibility
+    def kwic(self, keyword, db_dict, **kwargs):
+        """Legacy method - use search_keyword_corpus instead."""
+        print("⚠️ kwic() is deprecated. Use search_keyword_corpus() instead.")
+        return self.search_keyword_corpus(keyword, db_dict, **kwargs)
