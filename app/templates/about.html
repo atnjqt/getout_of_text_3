@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About – getout-of-text3</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+{% include 'header.html' %}
+<div class="container mt-5">
+  <h2 class="mb-3" style="padding-top:15px"><i class="fas fa-circle-info me-2"></i>About This Dashboard</h2>
+  <hr>
+
+<h3 class="mb-3"><i class="fas fa-graduation-cap me-2"></i>Getting Started</h3>
+  <p class="lead">This dashboard provides a fast, open, and searchable interface for exploring PDF extracts of United States Supreme Court cases. You can search for any word or phrase, and the dashboard will instantly show you all matching opinions with context snippets. Click on any result to view the full PDF text, and use the dark mode toggle for comfortable reading at any time of day.</p>
+  <p class="text-muted small">Built with open data, Python, Flask, and Bootstrap. Source code available on <a href="https://github.com/atnjqt/getout-of-text3" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a>.</p>
+
+  <h3 class="mt-5 mb-3"><i class="fas fa-lightbulb me-2"></i>Proposal</h3>
+<div class="card shadow-sm mb-4 p-4 proposal-card">
+    <div class="card-body">
+        <h5><p class="mb-1"><b>title:</b> <code>getout-of-text3</code><br></h5>
+        <h5><p class="mb-1"><b>subtitle:</b> Developing a system of corpus and computational linguistic tools with application to administrative law debates<br></h5>
+        <h5><p class="mb-1"><b>authors:</b> Etienne P. Jacquot and Matthew Brook O'Donnell<br></h5>
+        <h5><p class="mb-1"><b>institution:</b> <a href="https://www.asc.upenn.edu" target="_blank" rel="noopener">Annenberg School for Communication, University of Pennsylvania</a></h5>
+        <h5 class="mb-1"><b>abstract:</b></h5>
+        <p class="mb-2">Questions concerning the clarity, ambiguity, reasonableness, and common-sense implicature of legislative language are not new but have recently taken center stage following a series of decisions by SCOTUS (West Virginia v. EPA, 597 U.S., 2022; Loper Bright Enterprises v. Raimondo, 603 U.S., 2024). In the dissenting opinion of West Virginia v. EPA, Justice Kagan argued that the majority opinion's statement of the 'major questions doctrine' conveniently played a 'get-out-of-text- free' card', abandoning declared primary adherence to textualism (<a href="#ref-scalia-garner">Scalia & Garner, 2012</a>; <a href="#ref-coppess">Coppess 2022</a>). Kagan similarly dissents in Loper Bright Enterprises v. Raimondo, underscoring that in overturning Chevron, agency interpretations of statutory language will no longer receive judicial deference if “intervening in a 'major question,' of great economic and political significance” and as such fall prey to inconsistent and ideologically motivated applications of textualism.</p>
+        <p class="mb-2">The use of computational linguistic analysis in law, particularly with semi-automated approaches such as corpus linguistics (CL) has garnered some attention and adherents in part because it claims to help establish 'plain' or 'idiomatic' or 'ordinary' meaning and understanding of language empirically (see <a href="#ref-solan">Solan, 2020</a>; <a href="#ref-gozdz">Goźdź-Roszkowski, 2021</a>; <a href="#ref-wright">Wright 2021</a>). Valid critiques of the use of corpus methods on legal language have focused on the decontextualized nature of the applications which is surprising given that CL is defined by the focus on language-in-context (<a href="#ref-bernstein">Bernstein, 2021</a>; cf. <a href="#ref-gries">Gries 2021</a>).</p>
+        <p class="mb-2">Drawing on work in computational forensic linguistics, we describe the development of <code>getout-of-text3</code>, a system that brings together corpus (word frequency, KWIC concordance, keyword analysis, collocational profiles) and computational linguistic (narrative identification, graph representation and word embedding) tools with specific application to texts relevant to administrative law (specifically the cases and rulings in recent discussion of 'major questions doctrine'). This approach aims to address limitations of previous work (e.g., <a href="#ref-crump">Crump, 2018</a>) and take seriously the complexity of approaching questions of ambiguity and ordinary meaning within the framework of legal semiotics.</p>
+        <br>
+        <p class="mb-0">You are viewing the live demo at <a href="/" class="fw-semibold">http://127.0.0.1:5000/</a></p>
+    </div>
+</div>
+
+  <h3 class="mt-5 mb-3"><i class="fas fa-users me-2"></i>Developers</h3>
+  <div class="row g-3 align-items-stretch">
+    <div class="col-md-6 col-12 d-flex">
+      <div class="card shadow-sm mb-4 flex-fill">
+        <div class="row g-0 align-items-center h-100">
+          <div class="col-auto">
+            <img src="https://avatars.githubusercontent.com/u/44907911?v=4" alt="Etienne Jacquot" class="img-fluid rounded-start" style="width: 80px; height: 80px; object-fit: cover; margin: 16px;">
+          </div>
+          <div class="col">
+            <div class="card-body py-2 px-3">
+              <h5 class="card-title mb-1">Etienne Jacquot</h5>
+              <a href="https://github.com/atnjqt" class="card-link" target="_blank" rel="noopener">
+                <i class="fab fa-github me-1"></i>github.com/atnjqt
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-12 d-flex">
+      <div class="card shadow-sm mb-4 flex-fill">
+        <div class="row g-0 align-items-center h-100">
+          <div class="col-auto">
+            <img src="https://avatars.githubusercontent.com/u/725201?v=4" alt="Matt O'Donnell" class="img-fluid rounded-start" style="width: 80px; height: 80px; object-fit: cover; margin: 16px;">
+          </div>
+          <div class="col">
+            <div class="card-body py-2 px-3">
+              <h5 class="card-title mb-1">Matt O'Donnell</h5>
+              <a href="https://github.com/mbod" class="card-link" target="_blank" rel="noopener">
+                <i class="fab fa-github me-1"></i>github.com/mbod
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="mt-5 mb-3"><i class="fas fa-book me-2"></i>References</h3>
+  <ul class="small ps-3 mb-5">
+    <li id="ref-bernstein">Bernstein, A. (2022). Legal Corpus Linguistics and the Half-Empirical Attitude. <i>Cornell Law Review</i> (Vol. 106, pp. 1397-1456)</li>
+    <li id="ref-coppess">Coppess, J. (2022). Major Questions: The Supreme Court and the Decline of Textualism. <i>Farmdoc Daily, 12(108)</i>. <a href="https://farmdocdaily.illinois.edu/2022/07/major-questions-the-supreme-court-and-the-decline-of-textualism.html" target="_blank" rel="noopener">farmdocdaily.illinois.edu/2022/07/major-questions-the-supreme-court-and-the-decline-of-textualism.html</a></li>
+    <li id="ref-crump">Crump, J. (2018). Corpus Linguistics in the Chevron Two-Step. <i>Brigham Young University Law Review</i></li>
+    <li id="ref-gozdz">Goźdź-Roszkowski, S. (2021). Corpus Linguistics in Legal Discourse. <i>International Journal for the Semiotics of Law - Revue Internationale de Sémiotique Juridique, 34(5), 1515–1540.</i> <a href="https://doi.org/10.1007/s11196-021-09860-8" target="_blank" rel="noopener">doi.org/10.1007/s11196-021-09860-8</a></li>
+    <li id="ref-gries">Gries, S. Th. (2021). Corpus approaches to ordinary meaning in legal interpretation. In M. Coulthard, A. May, & R. Sousa-Silva (Eds.), <i>The Routledge Handbook of Forensic Linguistics</i>. Routledge.</li>
+    <li id="ref-scalia-garner">Scalia, A., &. B.A. Garner (2012). <i>Reading the Law: The Interpretation of Legal Texts</i>. Thompson West.</li>
+    <li id="ref-solan">Solan, L. M. (2020). Corpus Linguistics as a Method of Legal Interpretation: Some Progress, Some Questions. <i>International Journal for the Semiotics of Law - Revue Internationale de Sémiotique Juridique, 33(2), 283–298.</i> <a href="https://doi.org/10.1007/s11196-020-09707-8" target="_blank" rel="noopener">doi.org/10.1007/s11196-020-09707-8</a></li>
+    <li id="ref-wright">Wright, D. (2020). Corpus approaches to forensic linguistics. In M. Coulthard, A. May, & R. Sousa-Silva (Eds.), <i>The Routledge Handbook of Forensic Linguistics</i> (2nd ed., pp. 611–627). Routledge. <a href="https://doi.org/10.4324/9780429030581-47" target="_blank" rel="noopener">doi.org/10.4324/9780429030581-47</a></li>
+  </ul>
+</div>
+{% include 'footer.html' %}
+<script src="/static/js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

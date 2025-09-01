@@ -1,4 +1,30 @@
 .venv
 .venv/
+.venv_dev/
+
+.env
 
 *.db
+__pycache__
+
+# pypi distribution stuff
+dist/
+build/
+*.egg-info
+*.bak
+
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+app/.elasticbeanstalk/*
+
+.terraform
+.terraform/*
+!.terraform/*.tfstate
+!.terraform/*.tfstate.backup
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+iac/terraform.tfstate.backup
+*/terraform.tfstate

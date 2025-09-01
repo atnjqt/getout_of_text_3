@@ -1,0 +1,63 @@
+<!-- Documentation Reference for getout-of-text3 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Documentation | getout-of-text3</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+{% include 'header.html' %}
+<div class="container mt-5">
+    <h1 class="mb-4"><i class="fas fa-book me-2"></i>App Documentation & Route Reference</h1>
+    <p class="lead">This page documents the main routes/endpoints of the getout-of-text3 SCOTUS dashboard and their functions.</p>
+    <table class="table table-bordered table-striped table-responsive">
+        <thead class="table-dark">
+            <tr>
+                <th>Route</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/</code></td>
+                <td>GET</td>
+                <td>Main search page for SCOTUS term database. Search, filter, and view case data.</td>
+            </tr>
+            <tr>
+                <td><code>/data.json</code></td>
+                <td>GET</td>
+                <td>Returns all case data as JSON for use in the frontend or API clients.</td>
+            </tr>
+            <tr>
+                <td><code>/data.html</code></td>
+                <td>GET</td>
+                <td>Returns all case data as an HTML table (for direct viewing or embedding).</td>
+            </tr>
+            <tr>
+                <td><code>/search</code></td>
+                <td>GET</td>
+                <td>Advanced search endpoint. Returns filtered case data with context snippets and highlighting.</td>
+            </tr>
+            <tr>
+                <td><code>/oyez</code></td>
+                <td>GET</td>
+                <td>Oyez JSON viewer: input an Oyez API URL or use auto-fill from search results to visualize case metadata, justices, and opinions.</td>
+            </tr>
+            <tr>
+                <td><code>/about</code></td>
+                <td>GET</td>
+                <td>About page: project proposal, developer info, references, and dark mode toggle.</td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="mt-4">For more details, see the <a href="/about">About</a> page or the <a href="https://github.com/atnjqt/getout-of-text3" target="_blank" rel="noopener">GitHub repository</a>.</p>
+</div>
+{% include 'footer.html' %}
+<script src="/static/js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
