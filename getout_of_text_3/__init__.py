@@ -72,6 +72,31 @@ def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False):
 
 #import getout_of_text_3.datasets
 
+# Import embedding modules
+try:
+    from . import legal_bert
+    # Create embedding namespace
+    class EmbeddingModule:
+        def __init__(self):
+            # Make legal_bert module directly accessible
+            setattr(self, 'legal_bert', legal_bert)
+    
+    embedding = EmbeddingModule()
+except ImportError:
+    # If dependencies aren't available, create placeholder
+    class LegalBertPlaceholder:
+        def pipe(self, *args, **kwargs):
+            raise ImportError("Legal-BERT dependencies not installed. Run: pip install transformers torch matplotlib seaborn")
+        
+        def legal_bert(self, *args, **kwargs):
+            raise ImportError("Legal-BERT dependencies not installed. Run: pip install transformers torch matplotlib seaborn")
+    
+    class EmbeddingModule:
+        def __init__(self):
+            setattr(self, 'legal_bert', LegalBertPlaceholder())
+    
+    embedding = EmbeddingModule()
+
 # make the interactive namespace easier to use
 # for `from getout_of_text3 import *` demos.
 import getout_of_text_3 as got3
