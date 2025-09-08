@@ -6,22 +6,18 @@ getout_of_text3 is a comprehensive Python library for legal scholars and researc
 
 ## 🎯 Features for Legal Scholars
 
+### Using Three Functionalities as NLP, Embedding, and AI LLMs:
+
+- The got3 module aims to provide simpler toolsets for researchers and legal scholars in performing text analysis on legal corpora. This includes traditional corpus linguistics methods, as well as more advanced embedding models and AI language model functionalities.
+
 ### Core Functionality
 - **Corpus Loading**: Read and manage COCA corpus files across multiple genres
 - **Keyword Search**: Find terms with contextual information across legal texts
 - **Collocate Analysis**: Discover words that frequently appear near target terms
 - **Frequency Analysis**: Analyze term frequency across different legal genres
 - **Reproducible Research**: Support for open science methodologies
-
-### Supported Genres
-- Academic (`acad`) - Legal academic texts
-- Blog (`blog`) - Legal blogs and commentary  
-- Fiction (`fic`) - Legal fiction and narratives
-- Magazine (`mag`) - Legal magazine articles
-- News (`news`) - Legal news coverage
-- Spoken (`spok`) - Legal oral arguments and speeches
-- TV/Movie (`tvm`) - Legal drama and media
-- Web (`web`) - Legal web content
+- **Embedding Models**: Integration with legal-specific BERT models for advanced text analysis
+- **AI Language Models**: Tools for leveraging AI models in legal text analysis
 
 ## Installation
 
@@ -31,7 +27,55 @@ You can install getout_of_text3 using pip:
 pip install getout-of-text-3
 ```
 
-## Quick Start
+## Quick Start with Embedding
+
+There are a number of embedding models available for legal text analysis. 
+- The recommended model is `nlpaueb/legal-bert-base-uncased`, which is specifically trained on legal documents and is the most popular taged 'legal' on Hugging Face (https://huggingface.co/nlpaueb/legal-bert-base-uncased).
+
+- Other noteable examples include the latest EmbeddingGemma model from Google, `google/embeddinggemma-300m`, which promises to be more efficient and effective across general text analysis (https://huggingface.co/google/embeddinggemma-300m).
+
+### Legal Bert Example
+
+`getout_of_text3` provides a convenient interface to use these models for masked word prediction and other embedding tasks, namely using `got3.embedding.legal_bert.pipe()` function:
+
+```python
+### Trying it on got3
+import getout_of_text_3 as got3
+
+statement = "Establishing a system for the identification and registration of [MASK] animals and regarding the labelling of beef and beef products."
+masked_token="bovine"
+token_mask="[MASK]"
+
+results = got3.embedding.legal_bert.pipe(statement=statement, # the input text with a [MASK] token
+                                         masked_token=masked_token, # any token
+                                         token_mask=token_mask, # Default to [MASK]
+                                         top_k=5,  # Set number of top predictions to return
+                                         visualize=True, # Set to True to display barchart visualization
+                                         json_output=False)  # Set to True for JSON output
+```
+
+### EmbeddingGemma Example
+
+```python
+### Trying it on got3
+import getout_of_text_3 as got3
+
+#tbd...
+```
+
+
+
+## Quick Start with COCA Corpus
+
+Supported Genres (COCA):
+- Academic (`acad`) - Legal academic texts
+- Blog (`blog`) - Legal blogs and commentary  
+- Fiction (`fic`) - Legal fiction and narratives
+- Magazine (`mag`) - Legal magazine articles
+- News (`news`) - Legal news coverage
+- Spoken (`spok`) - Legal oral arguments and speeches
+- TV/Movie (`tvm`) - Legal drama and media
+- Web (`web`) - Legal web content
 
 ### Method 1: Using Convenience Functions (Recommended for Beginners)
 

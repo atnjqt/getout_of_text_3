@@ -42,11 +42,25 @@ rm -rf getout_of_text_3.egg-info/
 
 echo "    Version updated successfully... ✅"
 echo "    Building the package 🏗️"
-python3.11 -m build
-echo -e "\n"
-echo "    Package built successfully... ✅"
-echo -e "\n"
-sleep 0.5
+
+# Build the package and check for success
+if python3.11 -m build; then
+    echo -e "\n"
+    echo "    Package built successfully... ✅"
+    echo -e "\n"
+    
+    # Verify dist files exist
+    if [ ! -d "dist" ] || [ -z "$(ls -A dist/)" ]; then
+        echo "    ❌ Error: dist/ directory is empty or doesn't exist!"
+        exit 1
+    fi
+    
+    sleep 0.5
+else
+    echo -e "\n"
+    echo "    ❌ Package build failed!"
+    exit 1
+fi
 
 # Prompt to publish
 read -p "  👉 Do you want to publish the package? (y/n): " publish
@@ -57,6 +71,7 @@ if [ "$publish" == "y" ]; then
   if [ -f "$HOME/.pypirc" ]; then
     echo "    Using credentials from $HOME/.pypirc"
     echo -e "\n"
+    
     python3.11 -m twine upload dist/*
   else
     echo "    No .pypirc file found. Using manual authentication."
