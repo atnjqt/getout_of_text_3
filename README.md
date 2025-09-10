@@ -1,30 +1,38 @@
 # getout_of_text3: Enhanced Legal Text Analysis Toolkit
 
-getout_of_text3 is a comprehensive Python library for legal scholars and researchers working with COCA (Corpus of Contemporary American English) and other legal text corpora. It provides advanced tools for corpus analysis, keyword searching, collocate analysis, and frequency studies to support open science research in legal scholarship.
+The `getout_of_text3` module is a comprehensive Python library for legal scholars and researchers working with **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)) and other legal / natural language text corpora. It provides tools for traditional NLP tasks, embedding models, and integration with AI large language models (LLMs) to facilitate advanced text analysis and support open science research in legal scholarship.
 
-> **AI Disclaimer** This project is still in development and may not yet be suitable for production use. The development of this project is heavily reliant on AI CoPilot tools for staging and creating this pypi module. Please use with caution as it's only intended for experimental use cases and provides no warranty of fitness for any particular task.
+> **Disclaimer:** This project is still in development and may not yet be suitable for production use. The development of this project is heavily reliant on Artificial Intelligence coding tools for staging and deploying this PyPi module. Please use with caution as it is only intended for experimental use cases and explicitly provides no warranty of fitness for any particular task. In no way does this tool provide legal advice, nor do the authors of this module endorse any generative outputs you may observe or experience in using the toolset.
 
-## 🎯 Features for Legal Scholars
+## 🎯 Features for Legal & Linguistic Scholars
 
-### Using Three Functionalities as NLP, Embedding, and AI LLMs:
+The `got3` module aims to provide simpler toolsets to promote the computational forensic linguistic discovery of the 'ordinary meaning' of words in and out of legal contexts using modern techniques, with a focus on delivering an open-source tool built around three main areas of functionality:
 
-- The got3 module aims to provide simpler toolsets for researchers and legal scholars in performing text analysis on legal corpora. This includes traditional corpus linguistics methods, as well as more advanced embedding models and AI language model functionalities.
+1. **Traditional NLP:** corpus analysis, keyword searching, collocate analysis, and frequency studies to support open science research in legal scholarship.
+2. **Embedding Models**: tools like Legal-BERT, EmbeddingGemma, and other embedding models for deeper semantic analysis of legal texts using state-of-the-art techniques on devices with limited resources.
+3. **AI Language Models**: integration with large language models for advanced text generation and analysis tasks.
+
 
 ### Core Functionality
-- **Corpus Loading**: Read and manage COCA corpus files across multiple genres
-- **Keyword Search**: Find terms with contextual information across legal texts
-- **Collocate Analysis**: Discover words that frequently appear near target terms
-- **Frequency Analysis**: Analyze term frequency across different legal genres
-- **Reproducible Research**: Support for open science methodologies
+
+- **Corpus Linguistics**: Read and manage COCA corpus files across multiple genres
+    - **Keyword Search**: Find terms with contextual information across legal texts
+    - **Collocate Analysis**: Discover words that frequently appear near target terms
+    - **Frequency Analysis**: Analyze term frequency across different legal genres
 - **Embedding Models**: Integration with legal-specific BERT models for advanced text analysis
+    - **Legal-BERT**: Pre-trained models fine-tuned on legal texts for masked word prediction and semantic analysis
+    - **EmbeddingGemma**: Efficient embedding model for general text analysis
 - **AI Language Models**: Tools for leveraging AI models in legal text analysis
+    - **LLM Integration**: Interfaces for using large language models in legal research
+- **Reproducible Research**: Support for open science methodologies with notebooks and structured data outputs
+
 
 ## Installation
 
-You can install getout_of_text3 using pip:
+You can install `getout_of_text3` using pip:
 
 ```bash
-pip install getout-of-text-3
+pip install getout-of-text-3 -U
 ```
 
 ## Quick Start with Embedding
@@ -52,8 +60,17 @@ results = got3.embedding.legal_bert.pipe(statement=statement, # the input text w
                                          top_k=5,  # Set number of top predictions to return
                                          visualize=True, # Set to True to display barchart visualization
                                          json_output=False, # Set to True for JSON output
-                                         model_name="nlpaueb/legal-bert-small-uncased")
+                                         model_name="nlpaueb/legal-bert-base-uncased") # use small for similar results and lesser footprint
 ```
+```plaintext
+Top predictions for masked token (highest to lowest):
+1. 'live' - Score: 0.6683
+2. 'beef' - Score: 0.1665
+3. 'farm' - Score: 0.0316
+4. 'pet' - Score: 0.0218
+5. 'dairy' - Score: 0.0139)
+```
+![./img/legal_bert_bovine.png](./img/legal_bert_bovine.png)
 
 ### EmbeddingGemma Example
 
@@ -135,7 +152,7 @@ collocate_results = corpus.find_collocates("amendment", constitutional_data)
 freq_results = corpus.keyword_frequency_analysis("amendment", constitutional_data)
 ```
 
-## Complete Research Workflow Example
+### Complete Research Workflow Example
 
 Here's a complete example for analyzing constitutional language across COCA genres:
 
@@ -175,7 +192,7 @@ print("🎯 Constitutional Language Analysis Complete!")
 print("Results available for further statistical analysis and publication.")
 ```
 
-## File Format Support
+### File Format Support
 
 The toolkit supports COCA corpus files in these formats:
 - `text_<genre>.txt` - Standard COCA text files
@@ -218,9 +235,7 @@ This toolkit is specifically designed to support:
 
 ## Documentation
 
-- [Complete Analysis Guide](COCA_ANALYSIS_GUIDE.md) - Detailed usage examples
-- [API Reference](https://github.com/atnjqt/getout_of_text3) - Full function documentation
-- [Research Examples](demo_enhanced_functionality.py) - Sample research workflows
+- [GitHub Reference](https://github.com/atnjqt/getout_of_text3) - Full function documentation
 
 ## Contributing
 
