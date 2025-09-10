@@ -70,18 +70,54 @@ Top predictions for masked token (highest to lowest):
 4. 'pet' - Score: 0.0218
 5. 'dairy' - Score: 0.0139)
 ```
-![./img/legal_bert_bovine.png](./img/legal_bert_bovine.png)
+![https://raw.githubusercontent.com/atnjqt/getout_of_text_3/refs/heads/module-dev/img/legal_bert_bovine.png](https://raw.githubusercontent.com/atnjqt/getout_of_text_3/refs/heads/module-dev/img/legal_bert_bovine.png)
 
 ### EmbeddingGemma Example
+
+- The EmbeddingGemma model is designed for efficient text embeddings and can be used for various semantic tasks. The `got3.embedding.gemma.task()` function allows you to leverage this model for context ranking based on statutory language and ambiguous terms. The example below demonstrates how to use pre-computed search results from the COCA corpus to find the most relevant contexts for a given statutory phrasing.
 
 ```python
 ### Trying it on got3
 import getout_of_text_3 as got3
 
-#tbd...
+# First, perform a keyword search to get context data
+# Use the new got3.embedding.gemma function with search results
+result = got3.embedding.gemma.task(
+    statutory_language="The agency may modify the requirements as necessary to ensure compliance.",
+    ambiguous_term="modify",
+    year_enacted=2001,
+    search_results=keyword_list, # Pass the JSON results from search_keyword_corpus
+    model="google/embeddinggemma-300m"
+)
+print('')
+print("🎯 Top 3 most relevant contexts:")
+for i, item in enumerate(result['all_ranked'][:3]):
+    print(f"{i+1}. Genre: {item['genre']}, Score: {item['score']:.4f}")
+    print(f"   Context: {item['context'][:100]}...")
+    print()
+```
+```plaintext
+📚 Using pre-computed search results for 'modify'
+📚 Found 70 context examples across 7 genres
+🤖 Loading model: google/embeddinggemma-300m
+
+🎯 RESULTS:
+Most relevant context from blog (score: 0.3598)
+Context: is to enforce law created by Congress , not to **modify** it . Yes , he could have vetoed the reauthorization
+
+🎯 Top 3 most relevant contexts:
+1. Genre: blog, Score: 0.3598
+   Context: is to enforce law created by Congress , not to **modify** it . Yes , he could have vetoed the reauth...
+
+2. Genre: web, Score: 0.3385
+   Context: standards : <p> Use existing Multi-Modal Level-of-Service indicators , and **modify** them to reflec...
+
+3. Genre: news, Score: 0.3202
+   Context: loan is going to foreclosure , it make sense to **modify** if you can get to the point where the bor...
 ```
 
 
+____________________-
 
 ## Quick Start with COCA Corpus
 
@@ -109,7 +145,8 @@ results = got3.search_keyword_corpus(
     db_dict=corpus_data,
     case_sensitive=False,
     show_context=True,
-    context_words=5
+    context_words=5,
+    output="print" # json or print
 )
 
 # 3. Find collocates (words that appear near your target term)
@@ -235,7 +272,7 @@ This toolkit is specifically designed to support:
 
 ## Documentation
 
-- [GitHub Reference](https://github.com/atnjqt/getout_of_text3) - Full function documentation
+- [API Reference](https://github.com/atnjqt/getout_of_text3) - Full function documentation
 
 ## Contributing
 
