@@ -117,7 +117,7 @@ class LegalCorpus:
         
         return corpus_data
 
-    def search_keyword_corpus(self, keyword, db_dict, case_sensitive=False, show_context=True, context_words=5):
+    def search_keyword_corpus(self, keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print'):
         """
         Search for a keyword across all COCA genres and display results elegantly.
         
@@ -127,13 +127,15 @@ class LegalCorpus:
         - case_sensitive: Whether to perform case-sensitive search
         - show_context: Whether to show surrounding context
         - context_words: Number of words to show on each side for context
+        - output: 'print' to display results, 'json' to return structured data
         
         Returns:
         - Dictionary with search results by genre
         """
         
-        print(f"🔍 COCA Corpus Search: '{keyword}'")
-        print("=" * 60)
+        if output == 'print':
+            print(f"🔍 COCA Corpus Search: '{keyword}'")
+            print("=" * 60)
         
         results = defaultdict(list)
         total_hits = 0
@@ -147,106 +149,58 @@ class LegalCorpus:
         # Search through each genre
         for genre, df in db_dict.items():
             genre_hits = 0
-            print(f"\n📚 {genre.upper()} Genre:")
-            print("-" * 30)
-            
+            if output == 'print':
+                print(f"\n📚 {genre.upper()} Genre:")
+                print("-" * 30)
+            genre_result = []
             for idx, text in df['text'].items():
                 text_str = str(text)
                 matches = pattern.findall(text_str)
-                
                 if matches:
                     genre_hits += len(matches)
-                    
                     if show_context:
-                        # Find all match positions and show context
                         for match in pattern.finditer(text_str):
                             start, end = match.span()
-                            
-                            # Find word boundaries for context
                             words_before_match = text_str[:start].split()
                             words_after_match = text_str[end:].split()
-                            
-                            # Build context
                             context_before = ' '.join(words_before_match[-context_words:]) if words_before_match else ""
                             matched_word = text_str[start:end]
                             context_after = ' '.join(words_after_match[:context_words]) if words_after_match else ""
-                            
-                            # Format the context nicely
-                            context_display = f"...{context_before} **{matched_word}** {context_after}..."
-                            context_display = context_display.replace("...", "").strip()
-                            
+                            context_display = f"{context_before} **{matched_word}** {context_after}".strip()
                             results[genre].append({
                                 'text_id': idx,
                                 'match': matched_word,
                                 'context': context_display,
                                 'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
                             })
-                            
-                            print(f"  📝 Text {idx}: {context_display}")
+                            if output == 'print':
+                                print(f"  📝 Text {idx}: {context_display}")
                     else:
                         results[genre].append({
                             'text_id': idx,
                             'matches': len(matches),
                             'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
                         })
-            
-            if genre_hits > 0:
-                print(f"  ✅ Found {genre_hits} occurrence(s) in {genre}")
-            else:
-                print(f"  ❌ No matches found in {genre}")
-                
+            if output == 'print':
+                if genre_hits > 0:
+                    print(f"  ✅ Found {genre_hits} occurrence(s) in {genre}")
+                else:
+                    print(f"  ❌ No matches found in {genre}")
             total_hits += genre_hits
-        
-        print(f"\n🎯 SUMMARY:")
-        print(f"Total hits across all genres: {total_hits}")
-        print(f"Genres with matches: {len([g for g in results if results[g]])}")
-        
-        return dict(results)
-
-    def keyword_frequency_analysis(self, keyword, db_dict, case_sensitive=False):
-        """
-        Analyze frequency of keyword across genres.
-        
-        Parameters:
-        - keyword: The word to analyze
-        - db_dict: Dictionary of DataFrames (genre -> DataFrame)
-        - case_sensitive: Whether to perform case-sensitive search
-        
-        Returns:
-        - Dictionary with frequency data by genre
-        """
-        print(f"📊 Frequency Analysis for '{keyword}'")
-        print("=" * 50)
-        
-        freq_data = {}
-        
-        if case_sensitive:
-            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
-        else:
-            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
-        
-        for genre, df in db_dict.items():
-            total_words = 0
-            keyword_count = 0
-            
-            for text in df['text']:
-                text_str = str(text)
-                words = text_str.split()
-                total_words += len(words)
-                keyword_count += len(pattern.findall(text_str))
-            
-            # Calculate frequency per 1000 words
-            freq_per_1000 = (keyword_count / total_words * 1000) if total_words > 0 else 0
-            
-            freq_data[genre] = {
-                'count': keyword_count,
-                'total_words': total_words,
-                'freq_per_1000': round(freq_per_1000, 3)
-            }
-            
-            print(f"{genre:8s}: {keyword_count:4d} occurrences | {freq_per_1000:6.3f} per 1000 words")
-        
-        return freq_data
+        if output == 'print':
+            print(f"\n🎯 SUMMARY:")
+            print(f"Total hits across all genres: {total_hits}")
+            print(f"Genres with matches: {len([g for g in results if results[g]])}")
+            return dict(results)
+        elif output == 'json':
+            # Format as {genre: {text_id: context}}
+            json_results = {}
+            for genre, items in results.items():
+                genre_dict = {}
+                for item in items:
+                    genre_dict[str(item['text_id'])] = item['context']
+                json_results[genre] = genre_dict
+            return json_results
 
     def find_collocates(self, keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
         """

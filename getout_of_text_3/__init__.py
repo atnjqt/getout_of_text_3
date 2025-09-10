@@ -45,12 +45,12 @@ def read_corpora(dir_of_text_files, corpora_name, genre_list=None):
     corpus = LegalCorpus()
     return corpus.read_corpora(dir_of_text_files, corpora_name, genre_list)
 
-def search_keyword_corpus(keyword, db_dict, case_sensitive=False, show_context=True, context_words=5):
+def search_keyword_corpus(keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print'):
     """
     Convenience function for keyword search across corpus.
     """
     corpus = LegalCorpus()
-    return corpus.search_keyword_corpus(keyword, db_dict, case_sensitive, show_context, context_words)
+    return corpus.search_keyword_corpus(keyword, db_dict, case_sensitive, show_context, context_words, output)
 
 def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
     """
@@ -74,12 +74,14 @@ def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False):
 
 # Import embedding modules
 try:
-    from . import legal_bert
+    from . import legal_bert, embeddinggemma
     # Create embedding namespace
     class EmbeddingModule:
         def __init__(self):
             # Make legal_bert module directly accessible
             setattr(self, 'legal_bert', legal_bert)
+            # Make embeddinggemma module directly accessible
+            setattr(self, 'gemma', embeddinggemma)
     
     embedding = EmbeddingModule()
 except ImportError:
@@ -91,9 +93,17 @@ except ImportError:
         def legal_bert(self, *args, **kwargs):
             raise ImportError("Legal-BERT dependencies not installed. Run: pip install transformers torch matplotlib seaborn")
     
+    class EmbeddingGemmaPlaceholder:
+        def gemma(self, *args, **kwargs):
+            raise ImportError("EmbeddingGemma dependencies not installed. Run: pip install sentence-transformers torch")
+        
+        def to_json(self, *args, **kwargs):
+            raise ImportError("EmbeddingGemma dependencies not installed. Run: pip install sentence-transformers torch")
+    
     class EmbeddingModule:
         def __init__(self):
             setattr(self, 'legal_bert', LegalBertPlaceholder())
+            setattr(self, 'gemma', EmbeddingGemmaPlaceholder())
     
     embedding = EmbeddingModule()
 
