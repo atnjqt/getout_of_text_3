@@ -18,14 +18,17 @@ _pipe = None
 def _get_pipeline(model_name: str = "nlpaueb/legal-bert-base-uncased"):
     """Get or create the Legal-BERT pipeline"""
     global _pipe
-    if _pipe is None:
+    # If _pipe is None or model_name is different, create a new pipeline
+    if _pipe is None or getattr(_pipe, 'model_name', None) != model_name:
         _pipe = pipeline("fill-mask", model=model_name)
+        # Attach model_name attribute for future checks
+        _pipe.model_name = model_name
     return _pipe
 
 
 def pipe(statement: str, masked_token: Optional[str] = None, 
          token_mask: str = '[MASK]', top_k: int = 5, 
-         visualize: bool = True, json_output: bool = False) -> List[Dict[str, Any]]:
+         visualize: bool = True, json_output: bool = False, model_name: str = "nlpaueb/legal-bert-base-uncased") -> List[Dict[str, Any]]:
     """
     Legal-BERT pipeline for masked language modeling
     
@@ -54,7 +57,7 @@ def pipe(statement: str, masked_token: Optional[str] = None,
         raise ValueError(f"The token_mask '{token_mask}' is not in the statement.")
     
     # Get the pipeline and make predictions
-    legal_bert_pipeline = _get_pipeline()
+    legal_bert_pipeline = _get_pipeline(model_name=model_name)
     results = legal_bert_pipeline(statement, top_k=top_k)
     
     # If JSON output requested, return raw results without any display

@@ -51,7 +51,8 @@ results = got3.embedding.legal_bert.pipe(statement=statement, # the input text w
                                          token_mask=token_mask, # Default to [MASK]
                                          top_k=5,  # Set number of top predictions to return
                                          visualize=True, # Set to True to display barchart visualization
-                                         json_output=False)  # Set to True for JSON output
+                                         json_output=False, # Set to True for JSON output
+                                         model_name="nlpaueb/legal-bert-small-uncased")
 ```
 
 ### EmbeddingGemma Example

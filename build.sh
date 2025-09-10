@@ -17,6 +17,7 @@ echo -e '''
 __________________________________________________________________________________
 '''
 
+
 echo -e "\n"
 current_version=$(awk -F'"' '/^version = / {print $2}' pyproject.toml)
 echo "  getout_of_text_3 current version is: $current_version ⭐️"
@@ -80,3 +81,16 @@ if [ "$publish" == "y" ]; then
 else
   echo "  👉 Package not published. ❌"
 fi
+
+# ask if you want to upgrade the package with pip -U
+read -p "  👉 Do you want to upgrade the package locally with pip -U getout_of_text_3? (y/n): " upgrade
+if [ "$upgrade" == "y" ]; then
+  echo -e "\n"
+  echo "    Upgrading the package locally... ⬆️"
+  sleep 1
+  pip install -U getout_of_text_3
+else
+  echo "  👉 Package not upgraded. ❌"
+fi
+echo -e "\n"
+echo "  All done! 🎉"
