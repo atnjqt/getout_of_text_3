@@ -30,9 +30,17 @@ Advancing legal scholarship through open computational tools! ⚖️
 """
 
 from getout_of_text_3._config import options
-
-# Expose main corpus class
 from getout_of_text_3.corpus import LegalCorpus
+
+def read_corpus(dir_of_text_files=None):
+    """
+    Convenience function to read COCA corpus files.
+    Creates a temporary LegalCorpus instance and loads the data.
+    
+    Returns the loaded corpus dictionary.
+    """
+    corpus = LegalCorpus()
+    return corpus.read_corpus(dir_of_text_files)
 
 # Expose main functions for easy access
 def read_corpora(dir_of_text_files, corpora_name, genre_list=None):
@@ -59,18 +67,26 @@ def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=
     corpus = LegalCorpus()
     return corpus.find_collocates(keyword, db_dict, window_size, min_freq, case_sensitive)
 
-def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False):
-    """
-    Convenience function for frequency analysis.
+def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False, relative=True):
+    """Convenience function for frequency analysis.
+
+    Parameters mirror LegalCorpus.keyword_frequency_analysis
     """
     corpus = LegalCorpus()
-    return corpus.keyword_frequency_analysis(keyword, db_dict, case_sensitive)
+    return corpus.keyword_frequency_analysis(keyword, db_dict, case_sensitive=case_sensitive, relative=relative)
 
-# ...existing code...
-#from getout_of_text_3.io.file import _read_file as read_file
-#from getout_of_text_3.tools import sjoin, sjoin_nearest
-
-#import getout_of_text_3.datasets
+# Backward compatibility / explicit public API
+__all__ = [
+    'LegalCorpus',
+    'read_corpus',
+    'read_corpora',
+    'search_keyword_corpus',
+    'find_collocates',
+    'keyword_frequency_analysis',
+    'embedding',
+    'options',
+    '__version__'
+]
 
 # Import embedding modules
 try:
@@ -112,7 +128,5 @@ except ImportError:
 import getout_of_text_3 as got3
 import pandas as pd
 import numpy as np
-
-# Move version import to the end to avoid circular import issues
 from . import _version
 __version__ = _version.get_versions()["version"]

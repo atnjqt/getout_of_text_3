@@ -3,6 +3,11 @@ import os
 import re
 from collections import defaultdict, Counter
 try:
+    from tqdm import tqdm  # progress bar for long corpus builds
+except ImportError:  # graceful fallback if tqdm not installed
+    def tqdm(iterable, **kwargs):
+        return iterable
+try:
     import nltk
     NLTK_AVAILABLE = True
 except ImportError:
@@ -61,6 +66,81 @@ class LegalCorpus:
             return pd.read_csv(file_path, sep='\t', **kwargs)
         else:
             raise ValueError("Unsupported file format. Please use CSV or TSV.")
+
+    def read_corpus(self, dir_of_text_files=None, show_progress=True, show_file_progress=True, log_every=0):
+        """Build a structured nested dictionary from COCA-style text folders.
+
+        Structure returned: {genre -> (year OR file_num) -> text_id -> text_line}
+
+        Parameters:
+            dir_of_text_files (str|None): Root directory containing genre subfolders (defaults to self.data_dir)
+            show_progress (bool): Show top-level genre progress bar.
+            show_file_progress (bool): Show per-genre file progress bar (requires tqdm).
+            log_every (int): If > 0, print a running line-count every N captured lines per genre.
+
+        Notes on progress behavior:
+            Previously the single progress bar hit 100% once the last genre started, while large
+            final-genre files were still being parsed, creating the appearance of a "hang".
+            The added per-file progress bar (and optional line logging) provides visibility during
+            that final stretch.
+        """
+        if dir_of_text_files is None:
+            if not self.data_dir:
+                raise ValueError("No data directory specified. Set data_dir first.")
+            dir_of_text_files = self.data_dir
+        
+        coca_dict = {}
+        genre_folders = [f for f in os.listdir(dir_of_text_files) if f.startswith('text_')]
+
+        genre_iter = tqdm(genre_folders, desc="Genres", unit="genre") if show_progress else genre_folders
+
+        for genre_folder in genre_iter:
+            genre = genre_folder.split('_')[1]
+            print(f"Processing genre: {genre}")
+            genre_path = os.path.join(dir_of_text_files, genre_folder)
+
+            # Gather candidate files
+            genre_files = [fn for fn in os.listdir(genre_path) if fn.startswith('text_') and fn.endswith('.txt')]
+            file_iter = tqdm(genre_files, desc=f"{genre} files", unit="file", leave=False) if (show_file_progress and show_progress) else genre_files
+
+            captured_lines = 0
+
+            for filename in file_iter:
+                year_match = re.search(r'_(\d{4})\.txt$', filename)
+                file_num_match = None
+                if not year_match and genre in ['web', 'blog']:
+                    file_num_match = re.search(r'_(\d+)\.txt$', filename)
+
+                file_path = os.path.join(genre_path, filename)
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        for line in f:
+                            if not line.startswith('@@'):
+                                continue
+                            line = line.strip()
+                            parts = line.split(' ', 1)
+                            if len(parts) != 2:
+                                continue
+                            # Correct ID slice: lines start with '@@', so strip first two chars
+                            id_part = parts[0][2:]  # e.g., '@@12345' -> '12345'
+                            text_part = parts[1]
+
+                            if year_match:
+                                year = int(year_match.group(1))
+                                coca_dict.setdefault(genre, {}).setdefault(year, {})[id_part] = text_part
+                            elif file_num_match:
+                                file_num = file_num_match.group(1)
+                                coca_dict.setdefault(genre, {}).setdefault(file_num, {})[id_part] = text_part
+
+                            captured_lines += 1
+                            if log_every and captured_lines % log_every == 0:
+                                print(f"  {genre}: {captured_lines} lines captured so far...")
+                except Exception as e:
+                    print(f"  ⚠️ Failed reading {file_path}: {e}")
+
+            print(f"Finished genre: {genre} (total captured lines: {captured_lines})")
+        
+        return coca_dict
 
     def read_corpora(self, dir_of_text_files, corpora_name, genre_list=None):
         """
@@ -340,3 +420,52 @@ class LegalCorpus:
         """Legacy method - use search_keyword_corpus instead."""
         print("⚠️ kwic() is deprecated. Use search_keyword_corpus() instead.")
         return self.search_keyword_corpus(keyword, db_dict, **kwargs)
+
+    def keyword_frequency_analysis(self, keyword, db_dict, case_sensitive=False, relative=True):
+        """Compute frequency of a keyword across genres.
+
+        Parameters:
+            keyword (str): Term to count
+            db_dict (dict): genre -> DataFrame with 'text'
+            case_sensitive (bool): case sensitivity flag
+            relative (bool): include per 10k tokens metric
+        Returns:
+            dict summary
+        """
+        if not keyword:
+            raise ValueError("keyword must be a non-empty string")
+        flags = 0 if case_sensitive else re.IGNORECASE
+        pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', flags)
+        results = []
+        total_count = 0
+        grand_tokens = 0
+        for genre, df in db_dict.items():
+            count = 0
+            tokens = 0
+            for text in df['text']:
+                s = str(text)
+                count += len(pattern.findall(s))
+                tokens += len(s.split())
+            entry = {'genre': genre, 'count': count, 'tokens': tokens}
+            if relative and tokens:
+                entry['rel_per_10k'] = (count / tokens) * 10000
+            results.append(entry)
+            total_count += count
+            grand_tokens += tokens
+        results.sort(key=lambda x: x['count'], reverse=True)
+        summary = {
+            'keyword': keyword,
+            'total_count': total_count,
+            'by_genre': results,
+            'grand_total_tokens': grand_tokens
+        }
+        print(f"📊 Frequency Analysis for '{keyword}' (case_sensitive={case_sensitive})")
+        print("=" * 60)
+        for r in results:
+            if relative and 'rel_per_10k' in r:
+                print(f"  {r['genre']:8s}: {r['count']:6d} hits | {r['tokens']:8d} tokens | {r['rel_per_10k']:.2f} /10k")
+            else:
+                print(f"  {r['genre']:8s}: {r['count']:6d} hits | {r['tokens']:8d} tokens")
+        print("-" * 60)
+        print(f"TOTAL: {total_count} hits across {len(results)} genres (~{grand_tokens} tokens)")
+        return summary
