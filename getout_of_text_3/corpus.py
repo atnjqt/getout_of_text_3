@@ -1,7 +1,9 @@
 import pandas as pd
 import os
 import re
+import multiprocessing as mp
 from collections import defaultdict, Counter
+from functools import partial
 try:
     from tqdm import tqdm  # progress bar for long corpus builds
 except ImportError:  # graceful fallback if tqdm not installed
@@ -144,6 +146,57 @@ class LegalCorpus:
 
         return coca_dict
 
+    def _search_single_genre(self, genre_year_df_keyword_args):
+        """
+        Helper function for parallel processing - searches a single genre.
+        
+        Args:
+            genre_year_df_keyword_args: Tuple of (genre_year, df, keyword, case_sensitive, 
+                                                  show_context, context_words)
+        
+        Returns:
+            Tuple of (genre_year, results_list, genre_hits)
+        """
+        genre_year, df, keyword, case_sensitive, show_context, context_words = genre_year_df_keyword_args
+        
+        # Prepare search pattern
+        if case_sensitive:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
+        else:
+            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+        
+        results = []
+        genre_hits = 0
+        
+        for idx, text in df['text'].items():
+            text_str = str(text)
+            matches = pattern.findall(text_str)
+            if matches:
+                genre_hits += len(matches)
+                if show_context:
+                    for match in pattern.finditer(text_str):
+                        start, end = match.span()
+                        words_before_match = text_str[:start].split()
+                        words_after_match = text_str[end:].split()
+                        context_before = ' '.join(words_before_match[-context_words:]) if words_before_match else ""
+                        matched_word = text_str[start:end]
+                        context_after = ' '.join(words_after_match[:context_words]) if words_after_match else ""
+                        context_display = f"{context_before} **{matched_word}** {context_after}".strip()
+                        results.append({
+                            'text_id': idx,
+                            'match': matched_word,
+                            'context': context_display,
+                            'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
+                        })
+                else:
+                    results.append({
+                        'text_id': idx,
+                        'matches': len(matches),
+                        'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
+                    })
+        
+        return genre_year, results, genre_hits
+
     def _flatten_corpus_structure(self, db_dict):
         """
         Helper method to flatten nested corpus structure to work with existing search logic.
@@ -238,7 +291,7 @@ class LegalCorpus:
         
         return corpus_data
 
-    def search_keyword_corpus(self, keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print'):
+    def search_keyword_corpus(self, keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print', parallel=True, n_jobs=None):
         """
         Search for a keyword across a corpus dict.
         
@@ -247,12 +300,15 @@ class LegalCorpus:
         - Nested: {genre: {year: DataFrame}} (new full COCA format)
         
         Parameters:
-        - db_dict: Dictionary structure containing DataFrames
         - keyword: The word/phrase to search for
+        - db_dict: Dictionary structure containing DataFrames
         - case_sensitive: Whether to perform case-sensitive search
         - show_context: Whether to show surrounding context
         - context_words: Number of words to show on each side for context
         - output: 'print' to display results, 'json' to return structured data
+        - parallel: Whether to use parallel processing (default: True)
+        - n_jobs: Number of parallel processes (default: CPU count - 1)
+        
         Returns:
         - Dictionary with search results
         """
@@ -263,54 +319,68 @@ class LegalCorpus:
         results = defaultdict(list)
         total_hits = 0
 
-        # Prepare search pattern
-        if case_sensitive:
-            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
-        else:
-            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
-
         # Detect structure type and flatten if needed
         flat_dict = self._flatten_corpus_structure(db_dict)
         
-        for genre_year, df in flat_dict.items():
-            genre_hits = 0
+        if parallel and len(flat_dict) > 1:
+            # Use parallel processing for multiple genres
+            if n_jobs is None:
+                n_jobs = max(1, mp.cpu_count() - 1)  # Leave one CPU free
+            
             if output == 'print':
-                print(f"\n📚 {genre_year.upper()} :")
-                print("-" * 30)
-            for idx, text in df['text'].items():
-                text_str = str(text)
-                matches = pattern.findall(text_str)
-                if matches:
-                    genre_hits += len(matches)
-                    if show_context:
-                        for match in pattern.finditer(text_str):
-                            start, end = match.span()
-                            words_before_match = text_str[:start].split()
-                            words_after_match = text_str[end:].split()
-                            context_before = ' '.join(words_before_match[-context_words:]) if words_before_match else ""
-                            matched_word = text_str[start:end]
-                            context_after = ' '.join(words_after_match[:context_words]) if words_after_match else ""
-                            context_display = f"{context_before} **{matched_word}** {context_after}".strip()
-                            results[genre_year].append({
-                                'text_id': idx,
-                                'match': matched_word,
-                                'context': context_display,
-                                'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
-                            })
-                            if output == 'print':
-                                print(f"  📝 Text {idx}: {context_display}")
+                print(f"🚀 Using parallel processing with {n_jobs} processes...")
+            
+            # Prepare arguments for parallel processing
+            args_list = [
+                (genre_year, df, keyword, case_sensitive, show_context, context_words)
+                for genre_year, df in flat_dict.items()
+            ]
+            
+            # Process in parallel
+            try:
+                with mp.Pool(processes=n_jobs) as pool:
+                    parallel_results = pool.map(self._search_single_genre, args_list)
+                
+                # Collect results
+                for genre_year, genre_results, genre_hits in parallel_results:
+                    results[genre_year] = genre_results
+                    total_hits += genre_hits
+                    
+                    if output == 'print':
+                        print(f"\n📚 {genre_year.upper()} :")
+                        print("-" * 30)
+                        if genre_hits > 0:
+                            if show_context:
+                                for result in genre_results:
+                                    print(f"  📝 Text {result['text_id']}: {result['context']}")
+                            print(f"  ✅ Found {genre_hits} occurrence(s) in {genre_year}")
+                        else:
+                            print(f"  ❌ No matches found in {genre_year}")
+                            
+            except Exception as e:
+                print(f"⚠️ Parallel processing failed: {e}. Falling back to sequential processing...")
+                parallel = False
+        
+        if not parallel or len(flat_dict) <= 1:
+            # Sequential processing (fallback or single genre)
+            for genre_year, df in flat_dict.items():
+                _, genre_results, genre_hits = self._search_single_genre(
+                    (genre_year, df, keyword, case_sensitive, show_context, context_words)
+                )
+                results[genre_year] = genre_results
+                total_hits += genre_hits
+                
+                if output == 'print':
+                    print(f"\n� {genre_year.upper()} :")
+                    print("-" * 30)
+                    if genre_hits > 0:
+                        if show_context:
+                            for result in genre_results:
+                                print(f"  📝 Text {result['text_id']}: {result['context']}")
+                        print(f"  ✅ Found {genre_hits} occurrence(s) in {genre_year}")
                     else:
-                        results[genre_year].append({
-                            'text_id': idx,
-                            'matches': len(matches),
-                            'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
-                        })
-            if output == 'print':
-                if genre_hits > 0:
-                    print(f"  ✅ Found {genre_hits} occurrence(s) in {genre_year}")
-                else:
-                    print(f"  ❌ No matches found in {genre_year}")
-            total_hits += genre_hits
+                        print(f"  ❌ No matches found in {genre_year}")
+        
         if output == 'print':
             print(f"\n🎯 SUMMARY:")
             print(f"Total hits across all genre_years: {total_hits}")
@@ -321,7 +391,10 @@ class LegalCorpus:
             for genre_year, items in results.items():
                 genre_dict = {}
                 for item in items:
-                    genre_dict[str(item['text_id'])] = item['context']
+                    if 'context' in item:
+                        genre_dict[str(item['text_id'])] = item['context']
+                    else:
+                        genre_dict[str(item['text_id'])] = f"{item['matches']} matches"
                 json_results[genre_year] = genre_dict
             return json_results
 

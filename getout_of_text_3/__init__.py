@@ -53,12 +53,22 @@ def read_corpora(dir_of_text_files, corpora_name, genre_list=None):
     corpus = LegalCorpus()
     return corpus.read_corpora(dir_of_text_files, corpora_name, genre_list)
 
-def search_keyword_corpus(keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print'):
+def search_keyword_corpus(keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print', parallel=True, n_jobs=None):
     """
     Convenience function for keyword search across corpus.
+    
+    Parameters:
+    - keyword: The word/phrase to search for
+    - db_dict: Dictionary structure containing DataFrames
+    - case_sensitive: Whether to perform case-sensitive search
+    - show_context: Whether to show surrounding context
+    - context_words: Number of words to show on each side for context
+    - output: 'print' to display results, 'json' to return structured data
+    - parallel: Whether to use parallel processing (default: True)
+    - n_jobs: Number of parallel processes (default: CPU count - 1)
     """
     corpus = LegalCorpus()
-    return corpus.search_keyword_corpus(keyword, db_dict, case_sensitive, show_context, context_words, output)
+    return corpus.search_keyword_corpus(keyword, db_dict, case_sensitive, show_context, context_words, output, parallel, n_jobs)
 
 def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
     """
