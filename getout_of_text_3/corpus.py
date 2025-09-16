@@ -70,7 +70,7 @@ class LegalCorpus:
     def read_corpus(self, dir_of_text_files=None, show_progress=True, show_file_progress=True, log_every=0):
         """Build a structured nested dictionary from COCA-style text folders.
 
-        Structure returned: {genre -> (year OR file_num) -> text_id -> text_line}
+        Structure returned: {genre -> (year OR file_num) -> DataFrame(['text_id', 'text'])}
 
         Parameters:
             dir_of_text_files (str|None): Root directory containing genre subfolders (defaults to self.data_dir)
@@ -88,7 +88,7 @@ class LegalCorpus:
             if not self.data_dir:
                 raise ValueError("No data directory specified. Set data_dir first.")
             dir_of_text_files = self.data_dir
-        
+
         coca_dict = {}
         genre_folders = [f for f in os.listdir(dir_of_text_files) if f.startswith('text_')]
 
@@ -103,8 +103,7 @@ class LegalCorpus:
             genre_files = [fn for fn in os.listdir(genre_path) if fn.startswith('text_') and fn.endswith('.txt')]
             file_iter = tqdm(genre_files, desc=f"{genre} files", unit="file", leave=False) if (show_file_progress and show_progress) else genre_files
 
-            captured_lines = 0
-
+            genre_dict = {}
             for filename in file_iter:
                 year_match = re.search(r'_(\d{4})\.txt$', filename)
                 file_num_match = None
@@ -112,6 +111,8 @@ class LegalCorpus:
                     file_num_match = re.search(r'_(\d+)\.txt$', filename)
 
                 file_path = os.path.join(genre_path, filename)
+                text_rows = []
+                captured_lines = 0
                 try:
                     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                         for line in f:
@@ -121,27 +122,67 @@ class LegalCorpus:
                             parts = line.split(' ', 1)
                             if len(parts) != 2:
                                 continue
-                            # Correct ID slice: lines start with '@@', so strip first two chars
                             id_part = parts[0][2:]  # e.g., '@@12345' -> '12345'
                             text_part = parts[1]
-
-                            if year_match:
-                                year = int(year_match.group(1))
-                                coca_dict.setdefault(genre, {}).setdefault(year, {})[id_part] = text_part
-                            elif file_num_match:
-                                file_num = file_num_match.group(1)
-                                coca_dict.setdefault(genre, {}).setdefault(file_num, {})[id_part] = text_part
-
+                            text_rows.append({'text_id': id_part, 'text': text_part})
                             captured_lines += 1
                             if log_every and captured_lines % log_every == 0:
                                 print(f"  {genre}: {captured_lines} lines captured so far...")
                 except Exception as e:
                     print(f"  ⚠️ Failed reading {file_path}: {e}")
 
-            print(f"Finished genre: {genre} (total captured lines: {captured_lines})")
-        
+                # Assign DataFrame to correct year/file_num
+                if text_rows:
+                    if year_match:
+                        year = str(year_match.group(1))
+                        genre_dict[year] = pd.DataFrame(text_rows)
+                    elif file_num_match:
+                        file_num = file_num_match.group(1)
+                        genre_dict[file_num] = pd.DataFrame(text_rows)
+            print(f"Finished genre: {genre} (total files: {len(genre_dict)})")
+            coca_dict[genre] = genre_dict
+
         return coca_dict
 
+    def _flatten_corpus_structure(self, db_dict):
+        """
+        Helper method to flatten nested corpus structure to work with existing search logic.
+        
+        Input formats supported:
+        - Flat: {genre_year: DataFrame} -> returns as-is
+        - Nested: {genre: {year: DataFrame}} -> flattens to {genre_year: DataFrame}
+        
+        Returns:
+        - Flat dictionary: {genre_year: DataFrame}
+        """
+        # Check if this is already a flat structure
+        # Look at first value to determine structure
+        if not db_dict:
+            return {}
+            
+        first_key = next(iter(db_dict))
+        first_value = db_dict[first_key]
+        
+        # If first value is a DataFrame, assume flat structure
+        if isinstance(first_value, pd.DataFrame):
+            return db_dict
+            
+        # If first value is a dict, assume nested structure and flatten
+        elif isinstance(first_value, dict):
+            flat_dict = {}
+            for genre, years_dict in db_dict.items():
+                for year, df in years_dict.items():
+                    if isinstance(df, pd.DataFrame):
+                        flat_key = f"{genre}_{year}"
+                        flat_dict[flat_key] = df
+                    else:
+                        print(f"Skipping {genre}/{year}: not a DataFrame (type={type(df)})")
+            return flat_dict
+        else:
+            # Unknown structure, return as-is and let it fail gracefully
+            print(f"Warning: Unknown corpus structure type for key '{first_key}': {type(first_value)}")
+            return db_dict
+    
     def read_corpora(self, dir_of_text_files, corpora_name, genre_list=None):
         """
         Read COCA corpus files from a directory and organize by genre.
@@ -199,40 +240,43 @@ class LegalCorpus:
 
     def search_keyword_corpus(self, keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print'):
         """
-        Search for a keyword across all COCA genres and display results elegantly.
+        Search for a keyword across a corpus dict.
+        
+        Supports both structures:
+        - Flat: {genre_year: DataFrame} (legacy format)
+        - Nested: {genre: {year: DataFrame}} (new full COCA format)
         
         Parameters:
+        - db_dict: Dictionary structure containing DataFrames
         - keyword: The word/phrase to search for
-        - db_dict: Dictionary of DataFrames (genre -> DataFrame)
         - case_sensitive: Whether to perform case-sensitive search
         - show_context: Whether to show surrounding context
         - context_words: Number of words to show on each side for context
         - output: 'print' to display results, 'json' to return structured data
-        
         Returns:
-        - Dictionary with search results by genre
+        - Dictionary with search results
         """
-        
         if output == 'print':
             print(f"🔍 COCA Corpus Search: '{keyword}'")
             print("=" * 60)
-        
+
         results = defaultdict(list)
         total_hits = 0
-        
+
         # Prepare search pattern
         if case_sensitive:
             pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
         else:
             pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+
+        # Detect structure type and flatten if needed
+        flat_dict = self._flatten_corpus_structure(db_dict)
         
-        # Search through each genre
-        for genre, df in db_dict.items():
+        for genre_year, df in flat_dict.items():
             genre_hits = 0
             if output == 'print':
-                print(f"\n📚 {genre.upper()} Genre:")
+                print(f"\n📚 {genre_year.upper()} :")
                 print("-" * 30)
-            genre_result = []
             for idx, text in df['text'].items():
                 text_str = str(text)
                 matches = pattern.findall(text_str)
@@ -247,7 +291,7 @@ class LegalCorpus:
                             matched_word = text_str[start:end]
                             context_after = ' '.join(words_after_match[:context_words]) if words_after_match else ""
                             context_display = f"{context_before} **{matched_word}** {context_after}".strip()
-                            results[genre].append({
+                            results[genre_year].append({
                                 'text_id': idx,
                                 'match': matched_word,
                                 'context': context_display,
@@ -256,39 +300,42 @@ class LegalCorpus:
                             if output == 'print':
                                 print(f"  📝 Text {idx}: {context_display}")
                     else:
-                        results[genre].append({
+                        results[genre_year].append({
                             'text_id': idx,
                             'matches': len(matches),
                             'full_text': text_str[:100] + "..." if len(text_str) > 100 else text_str
                         })
             if output == 'print':
                 if genre_hits > 0:
-                    print(f"  ✅ Found {genre_hits} occurrence(s) in {genre}")
+                    print(f"  ✅ Found {genre_hits} occurrence(s) in {genre_year}")
                 else:
-                    print(f"  ❌ No matches found in {genre}")
+                    print(f"  ❌ No matches found in {genre_year}")
             total_hits += genre_hits
         if output == 'print':
             print(f"\n🎯 SUMMARY:")
-            print(f"Total hits across all genres: {total_hits}")
-            print(f"Genres with matches: {len([g for g in results if results[g]])}")
+            print(f"Total hits across all genre_years: {total_hits}")
+            print(f"Genre_years with matches: {len([g for g in results if results[g]])}")
             return dict(results)
         elif output == 'json':
-            # Format as {genre: {text_id: context}}
             json_results = {}
-            for genre, items in results.items():
+            for genre_year, items in results.items():
                 genre_dict = {}
                 for item in items:
                     genre_dict[str(item['text_id'])] = item['context']
-                json_results[genre] = genre_dict
+                json_results[genre_year] = genre_dict
             return json_results
 
     def find_collocates(self, keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
         """
         Find words that frequently appear near the keyword (collocates).
         
+        Supports both corpus structures:
+        - Flat: {genre_year: DataFrame} (legacy format)
+        - Nested: {genre: {year: DataFrame}} (new full COCA format)
+        
         Parameters:
         - keyword: Target word to find collocates for
-        - db_dict: Dictionary of DataFrames
+        - db_dict: Dictionary structure containing DataFrames
         - window_size: Number of words to look at on each side
         - min_freq: Minimum frequency for a word to be considered a collocate
         - case_sensitive: Whether to perform case-sensitive search
@@ -307,8 +354,11 @@ class LegalCorpus:
         all_collocates = Counter()
         genre_collocates = {}
 
-        for genre, df in db_dict.items():
-            print(f"\n📚 {genre.upper()} Genre Collocates:")
+        # Flatten structure if needed
+        flat_dict = self._flatten_corpus_structure(db_dict)
+
+        for genre_year, df in flat_dict.items():
+            print(f"\n📚 {genre_year.upper()} Genre Collocates:")
             
             # Create a fresh counter for each genre
             genre_counter = Counter()
@@ -349,12 +399,12 @@ class LegalCorpus:
                     all_collocates.update(context_words)
             
             # Store the results for this genre
-            genre_collocates[genre] = genre_counter
+            genre_collocates[genre_year] = genre_counter
             
             # Display top collocates for this genre
             top_collocates = genre_counter.most_common(10)
             if top_collocates:
-                print(f"  Found {keyword_instances} instances of '{keyword}' in {genre}")
+                print(f"  Found {keyword_instances} instances of '{keyword}' in {genre_year}")
                 # Show all results, but mark those below min_freq
                 for word, freq in top_collocates:
                     marker = "  " if freq >= min_freq else "* "
