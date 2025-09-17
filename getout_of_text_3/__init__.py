@@ -79,22 +79,21 @@ def search_keyword_corpus(keyword, db_dict, case_sensitive=False, show_context=T
         n_jobs=n_jobs
     )
 
-def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
+def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False, parallel=True, n_jobs=None):
     """
     Convenience function for collocate analysis.
     Accepts parallel and n_jobs for multiprocessing.
     """
-    def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False, parallel=True, n_jobs=None):
-        corpus = LegalCorpus()
-        return corpus.find_collocates(
-            keyword,
-            db_dict,
-            window_size=window_size,
-            min_freq=min_freq,
-            case_sensitive=case_sensitive,
-            parallel=parallel,
-            n_jobs=n_jobs
-        )
+    corpus = LegalCorpus()
+    return corpus.find_collocates(
+        keyword,
+        db_dict,
+        window_size=window_size,
+        min_freq=min_freq,
+        case_sensitive=case_sensitive,
+        parallel=parallel,
+        n_jobs=n_jobs
+    )
 
 def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False, relative=True, parallel=True, n_jobs=None):
     """Convenience function for frequency analysis.
