@@ -1,50 +1,95 @@
 # getout_of_text3: Enhanced Legal Text Analysis Toolkit
 
-The `getout_of_text3` module is a comprehensive Python library for legal scholars and researchers working with **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)) and other legal / natural language text corpora. It provides tools for traditional NLP tasks, embedding models, and integration with AI large language models (LLMs) to facilitate advanced text analysis and support open science research in legal scholarship.
+The `getout_of_text3` module is a comprehensive Python library promoting open and reproducible computational forensic linguistics toolsets for data scientists and legal scholars performing textual analysis with popular corpora such as **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora.
 
-> **Disclaimer:** This project is still in development and may not yet be suitable for production use. The development of this project is heavily reliant on Artificial Intelligence coding tools for staging and deploying this PyPi module. Please use with caution as it is only intended for experimental use cases and explicitly provides no warranty of fitness for any particular task. In no way does this tool provide legal advice, nor do the authors of this module endorse any generative outputs you may observe or experience in using the toolset.
+## 🎯 Overview of Features for Legal & Linguistic Scholars
 
-## 🎯 Features for Legal & Linguistic Scholars
+The `got3` module aims to provide simpler toolsets to promote the discovery of the *'ordinary meaning'* of words in and out of legal contexts using computational techniques, with a focus on delivering an open-source tool built around three main areas of functionality:
 
-The `got3` module aims to provide simpler toolsets to promote the computational forensic linguistic discovery of the 'ordinary meaning' of words in and out of legal contexts using modern techniques, with a focus on delivering an open-source tool built around three main areas of functionality:
-
-1. **Traditional NLP:** corpus analysis, keyword searching, collocate analysis, and frequency studies to support open science research in legal scholarship.
-2. **Embedding Models**: tools like Legal-BERT, EmbeddingGemma, and other embedding models for deeper semantic analysis of legal texts using state-of-the-art techniques on devices with limited resources.
-3. **AI Language Models**: integration with large language models for advanced text generation and analysis tasks.
-
-
-### Core Functionality
-
-- **Corpus Linguistics**: Read and manage COCA corpus files across multiple genres
-    - **Keyword Search**: Find terms with contextual information across legal texts
-    - **Collocate Analysis**: Discover words that frequently appear near target terms
-    - **Frequency Analysis**: Analyze term frequency across different legal genres
-- **Embedding Models**: Integration with legal-specific BERT models for advanced text analysis
-    - **Legal-BERT**: Pre-trained models fine-tuned on legal texts for masked word prediction and semantic analysis
-    - **EmbeddingGemma**: Efficient embedding model for general text analysis
-- **AI Language Models**: Tools for leveraging AI models in legal text analysis
+- 📚 **Corpus Linguistics**: Read and manage COCA corpus files across multiple genres
+    - 🕵 **Keyword Search**: Find terms with contextual information across legal texts
+    - 🔍 **Collocate Analysis**: Discover words that frequently appear near target terms
+    - 📊 **Frequency Analysis**: Analyze term frequency across different legal genres
+- 🤗 **Embedding Models**: Integration with legal-specific BERT models for advanced text analysis
+    - **`Legal-BERT`**: Pre-trained models fine-tuned on legal texts for masked word prediction and semantic analysis
+    - **`EmbeddingGemma`**: Efficient embedding model for general text analysis
+- 🤖 **AI Language Models**: Tools for leveraging AI models in legal text analysis
     - **LLM Integration**: Interfaces for using large language models in legal research
-- **Reproducible Research**: Support for open science methodologies with notebooks and structured data outputs
+- 🔬 **Reproducible Research**: Support for open science methodologies with notebooks and structured data outputs
+    - 🧑‍💻 **Demonstration Notebooks**: Jupyter notebooks showcasing various use cases and methodologies for how to use the tool, with limited compute and/or cloud resources.
+    - 📈 **Data Outputs**: Structured outputs suitable for statistical analysis and publication
 
 
-## Installation
+## Getting Started
 
-You can install `getout_of_text3` using pip:
+### Installation
+
+You can install `getout_of_text3` using pip. I recommend setting up a virtual environment using [venv](https://docs.python.org/3/library/venv.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) to manage dependencies.
 
 ```bash
+python3.11 -m venv .venv
+source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
 pip install getout-of-text-3 -U
 ```
 
-## Quick Start with Embedding
+The below examples demonstrate how to use the `getout_of_text3` module for various tasks using corpus linguistics tools, embedding models, and AI language models.
 
-There are a number of embedding models available for legal text analysis. 
-- The recommended model is `nlpaueb/legal-bert-base-uncased`, which is specifically trained on legal documents and is the most popular taged 'legal' on Hugging Face (https://huggingface.co/nlpaueb/legal-bert-base-uncased).
+______________________
 
-- Other noteable examples include the latest EmbeddingGemma model from Google, `google/embeddinggemma-300m`, which promises to be more efficient and effective across general text analysis (https://huggingface.co/google/embeddinggemma-300m).
+### Corpus of Contemporary American English (COCA)
 
-### Legal Bert Example
+If you have access and paid for the COCA corpus (https://www.corpusdata.org/purchase.asp with academic & commercial licenses), you can use the `got3` module to read and analyze the corpus files. Please ensure you comply with the licensing terms of COCA when using the corpus data.
 
-`getout_of_text3` provides a convenient interface to use these models for masked word prediction and other embedding tasks, namely using `got3.embedding.legal_bert.pipe()` function:
+> 📝 Note: The COCA corpus is a large and diverse corpus of American English, and it DOES contain sensitive or proprietary information. Please use the corpus responsibly and in accordance with the licensing terms. English Corpora scrubs 95%/5% with 10 `@` signs, so you may notice that in search results as an effort to promote fair use doctrine in copyright law. The database maintainers also add a watermark throughtout the text content that deviates from the real content, and periodically scan the public web for distribution of this content.
+
+#### Read the Dataset
+
+- the `./coca-text/` directory should contain the COCA text files you downloaded from the English Corpora website, such as `text_acad.txt`, `text_blog.txt`, etc. It's organized by genre and year, except for Web & Blog that are by index.
+
+```python
+### Trying it on got3
+import getout_of_text_3 as got3
+
+coca_corpus = got3.read_corpus('./coca-text/')
+```
+
+#### Search the Corpus for a Keyword
+
+- your `coca_corpus` is a **dictionary of dataframes**, one for each genre, that you can use for further analysis.
+
+```python 
+# use time elapse to show query times. multiprocessing is available for faster searches.
+import pandas as pd
+before = pd.Timestamp.now()
+
+results = got3.search_keyword_corpus('bovine', coca_corpus, 
+                                            case_sensitive=False,
+                                            show_context=True, 
+                                            context_words=15,
+                                            output='print',
+                                            parallel=True)
+after = pd.Timestamp.now()
+print('time elapsed:', after - before)
+```
+```plaintext
+🔍 COCA Corpus Search: 'bovine'
+============================================================
+🚀 Using parallel processing with 9 processes...
+
+🎯 SUMMARY:
+Total hits across all genre_years: 1196
+Genre_years with matches: 206
+time elapsed: 0 days 00:00:21.415171
+```
+
+tbd for more here ... 
+
+______________________
+
+______________________
+### Legal Bert Text Masking
+
+`getout_of_text3` provides a convenient interface to use these models for masked word prediction and other embedding tasks, namely using `got3.embedding.legal_bert.pipe()` function, `nlpaueb/legal-bert-base-uncased`, which is specifically trained on legal documents and is the most popular taged 'legal' on Hugging Face (https://huggingface.co/nlpaueb/legal-bert-base-uncased).
 
 ```python
 ### Trying it on got3
@@ -72,10 +117,14 @@ Top predictions for masked token (highest to lowest):
 ```
 ![https://raw.githubusercontent.com/atnjqt/getout_of_text_3/refs/heads/module-dev/img/legal_bert_bovine.png](https://raw.githubusercontent.com/atnjqt/getout_of_text_3/refs/heads/module-dev/img/legal_bert_bovine.png)
 
-### EmbeddingGemma Example
+______________________
+### EmbeddingGemma Document Similarity & Context Ranking
 
-- The EmbeddingGemma model is designed for efficient text embeddings and can be used for various semantic tasks. The `got3.embedding.gemma.task()` function allows you to leverage this model for context ranking based on statutory language and ambiguous terms. The example below demonstrates how to use pre-computed search results from the COCA corpus to find the most relevant contexts for a given statutory phrasing.
+- The EmbeddingGemma model is designed for efficient text embeddings and can be used for various semantic tasks. The `got3.embedding.gemma.task()` function, leveraging `google/embeddinggemma-300m`, promises to be more efficient and effective across general text analysis (https://huggingface.co/google/embeddinggemma-300m) and is environmentally friendly in running AI on the device. The `got3` integrates large collections of keywords in context, documents, collocates, etc., allowing you to leverage this model for context ranking based on ambiguous terms in statutory languages. 
 
+- The example below demonstrates how to use pre-computed search results from the COCA corpus to find the most relevant contexts for a given statutory phrasing.
+
+- Other noteable examples include the latest
 ```python
 ### Trying it on got3
 import getout_of_text_3 as got3
@@ -119,9 +168,10 @@ Context: is to enforce law created by Congress , not to **modify** it . Yes , he
 
 ____________________-
 
-## Quick Start with COCA Corpus
+## Corpus of Contemporary American English (COCA)
 
-Supported Genres (COCA):
+You can gain access to the English Corpora website and register for academic / personal use of the COCA corpus at [https://www.english-corpora.org/coca/](https://www.english-corpora.org/coca/). If your university or organization has a subscription, you may be able to access the platform for free or at a reduced cost. Namely, your university or organization (probably the central library) may already have a subscription to the English Corpora dataset downloads and you can check with them to see if you can get access to the full dataset. You must agree to the terms of service and licensing agreement before downloading and using the COCA corpus files, which is namely to **not redistribute the corpus files** and to **not use the corpus for commercial purposes**.
+
 - Academic (`acad`) - Legal academic texts
 - Blog (`blog`) - Legal blogs and commentary  
 - Fiction (`fic`) - Legal fiction and narratives
@@ -161,6 +211,14 @@ collocates = got3.find_collocates(
 freq_analysis = got3.keyword_frequency_analysis(
     keyword="legal",
     db_dict=corpus_data
+)
+print(freq_analysis['by_genre'][:2])  # preview
+
+# Relative frequency per 10k tokens
+freq_rel = got3.keyword_frequency_analysis(
+    keyword="legal",
+    db_dict=corpus_data,
+    relative=True
 )
 ```
 
@@ -229,35 +287,6 @@ print("🎯 Constitutional Language Analysis Complete!")
 print("Results available for further statistical analysis and publication.")
 ```
 
-### File Format Support
-
-The toolkit supports COCA corpus files in these formats:
-- `text_<genre>.txt` - Standard COCA text files
-- `db_<genre>.txt` - COCA database files  
-- Tab-separated values with text content
-- Custom CSV/TSV formats with pandas integration
-
-## Advanced Features
-
-### Text Processing
-- NLTK integration for advanced tokenization (with fallback methods)
-- Case-sensitive and case-insensitive search options
-- Flexible window sizes for collocate analysis
-- Customizable frequency thresholds
-
-### Research Support
-- Structured data outputs for statistical analysis
-- Reproducible methodology documentation
-- Integration with pandas for data science workflows
-- Support for multiple corpus comparison studies
-
-## Dependencies
-
-- `pandas >= 1.0` - Data manipulation and analysis
-- `numpy >= 1.18` - Numerical computing
-- `nltk >= 3.8` - Natural language processing (optional but recommended)
-
-NLTK provides enhanced tokenization but the toolkit will use fallback methods if not available.
 
 ## For Legal Researchers
 
@@ -295,6 +324,9 @@ GitHub. https://github.com/atnjqt/getout_of_text3
 
 For questions, issues, or feature requests, please visit our [GitHub repository](https://github.com/atnjqt/getout_of_text3) or contact the development team.
 
----
+## Acknowledgements
+We would like to thank the open-source community, legal scholars, and data scientists who have contributed to the development of this toolkit. Moreover, the UPenn Library Data Science team for their continued support.
 
 **Advancing legal scholarship through open computational tools! ⚖️**
+
+> **Disclaimer:** This project is still in development and may not yet be suitable for production use. The development of this project is heavily reliant on Artificial Intelligence coding tools for staging and deploying this PyPi module. Please use with caution as it is only intended for experimental use cases and explicitly provides no warranty of fitness for any particular task. In no way does this tool provide legal advice, nor do the authors of this module endorse any generative outputs you may observe or experience in using the toolset.

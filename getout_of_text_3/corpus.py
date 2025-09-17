@@ -545,11 +545,12 @@ class LegalCorpus:
         return self.search_keyword_corpus(keyword, db_dict, **kwargs)
 
     def keyword_frequency_analysis(self, keyword, db_dict, case_sensitive=False, relative=True):
-        """Compute frequency of a keyword across genres.
+        """Compute frequency of a keyword across a nested corpus dict (genre -> year -> DataFrame),
+        with per-genre, per-year, and per-text_id breakdowns.
 
         Parameters:
             keyword (str): Term to count
-            db_dict (dict): genre -> DataFrame with 'text'
+            db_dict (dict): genre -> year -> DataFrame(['text_id', 'text'])
             case_sensitive (bool): case sensitivity flag
             relative (bool): include per 10k tokens metric
         Returns:
@@ -557,38 +558,56 @@ class LegalCorpus:
         """
         if not keyword:
             raise ValueError("keyword must be a non-empty string")
+        # Always use loose substring search, case-insensitive by default
         flags = 0 if case_sensitive else re.IGNORECASE
-        pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', flags)
-        results = []
+        pattern = re.compile(re.escape(keyword), flags)
+
+        results_list = []
         total_count = 0
         grand_tokens = 0
-        for genre, df in db_dict.items():
-            count = 0
-            tokens = 0
-            for text in df['text']:
-                s = str(text)
-                count += len(pattern.findall(s))
-                tokens += len(s.split())
-            entry = {'genre': genre, 'count': count, 'tokens': tokens}
-            if relative and tokens:
-                entry['rel_per_10k'] = (count / tokens) * 10000
-            results.append(entry)
-            total_count += count
-            grand_tokens += tokens
-        results.sort(key=lambda x: x['count'], reverse=True)
+        per_text = {}  # genre_year_textid: count
+
+        for genre, year_dict in db_dict.items():
+            genre_count = 0
+            genre_tokens = 0
+            years = {}
+            for year, df in year_dict.items():
+                year_count = 0
+                year_tokens = 0
+                for idx, row in df.iterrows():
+                    text_id = str(row['text_id']) if 'text_id' in row else str(idx)
+                    s = str(row['text'])
+                    count = len(pattern.findall(s))
+                    tokens = len(s.split())
+                    genre_count += count
+                    genre_tokens += tokens
+                    year_count += count
+                    year_tokens += tokens
+                    key = f"{genre}_{year}_{text_id}"
+                    per_text[key] = {'count': count, 'tokens': tokens}
+                years[year] = {'count': year_count, 'tokens': year_tokens}
+            entry = {'genre': genre, 'count': genre_count, 'tokens': genre_tokens, 'years': years}
+            if relative and genre_tokens:
+                entry['rel_per_10k'] = (genre_count / genre_tokens) * 10000
+            results_list.append(entry)
+            total_count += genre_count
+            grand_tokens += genre_tokens
+        results_list.sort(key=lambda x: x['count'], reverse=True)
+
         summary = {
             'keyword': keyword,
             'total_count': total_count,
-            'by_genre': results,
-            'grand_total_tokens': grand_tokens
+            'by_genre': results_list,
+            'grand_total_tokens': grand_tokens,
+            'per_text': per_text
         }
-        print(f"📊 Frequency Analysis for '{keyword}' (case_sensitive={case_sensitive})")
+        print(f"\U0001f4ca Frequency Analysis for '{keyword}' (case_sensitive={case_sensitive}, loose substring match)")
         print("=" * 60)
-        for r in results:
+        for r in results_list:
             if relative and 'rel_per_10k' in r:
                 print(f"  {r['genre']:8s}: {r['count']:6d} hits | {r['tokens']:8d} tokens | {r['rel_per_10k']:.2f} /10k")
             else:
                 print(f"  {r['genre']:8s}: {r['count']:6d} hits | {r['tokens']:8d} tokens")
         print("-" * 60)
-        print(f"TOTAL: {total_count} hits across {len(results)} genres (~{grand_tokens} tokens)")
+        print(f"TOTAL: {total_count} hits across {len(results_list)} genres (~{grand_tokens} tokens)")
         return summary
