@@ -40,7 +40,21 @@ ______________________
 
 If you have access and paid for the COCA corpus (https://www.corpusdata.org/purchase.asp with academic & commercial licenses), you can use the `got3` module to read and analyze the corpus files. Please ensure you comply with the licensing terms of COCA when using the corpus data.
 
-> 📝 Note: The COCA corpus is a large and diverse corpus of American English, and it DOES contain sensitive or proprietary information. Please use the corpus responsibly and in accordance with the licensing terms. English Corpora scrubs 95%/5% with 10 `@` signs, so you may notice that in search results as an effort to promote fair use doctrine in copyright law. The database maintainers also add a watermark throughtout the text content that deviates from the real content, and periodically scan the public web for distribution of this content.
+> 📝 Note: The COCA corpus is a large and diverse corpus of American English, and it DOES contain sensitive or proprietary information. Please use the corpus responsibly and in accordance with the licensing terms. English Corpora scrubs 95%/5% with 10 `@` signs, so you may notice that in search results as an effort to promote fair use doctrine in copyright law. The database maintainers also add a watermark throughtout the text content that deviates from the real content, and periodically scan the public web for distribution of this content. You must agree to the terms of service and licensing agreement before downloading and using the COCA corpus files, which is namely to **not redistribute the corpus files** and to **not use the corpus for commercial purposes**.
+
+
+#### Genres & Years
+
+Years are from 1990-2019 for the following distributions of COCA:
+
+1. Academic (`acad`) - Legal academic texts
+2. Blog (`blog`) - Legal blogs and commentary  
+3. Fiction (`fic`) - Legal fiction and narratives
+4. Magazine (`mag`) - Legal magazine articles
+5. News (`news`) - Legal news coverage
+6. Spoken (`spok`) - Legal oral arguments and speeches
+7. TV/Movie (`tvm`) - Legal drama and media
+8. Web (`web`) - Legal web content
 
 #### Read the Dataset
 
@@ -82,7 +96,35 @@ Genre_years with matches: 206
 time elapsed: 0 days 00:00:21.415171
 ```
 
-tbd for more here ... 
+- get a distribution of a keyword across genres, for example still using `bovine`:
+
+```python
+before = pd.Timestamp.now()
+bovine_freq = got3.keyword_frequency_analysis('bovine', 
+                                              coca_corpus, 
+                                              case_sensitive=False,
+                                              relative=True, # optionally to show column, per 10k words
+                                              parallel=True # use parallel processing
+                                              )
+after = pd.Timestamp.now()
+print('time elapsed:', after - before)
+```
+```plaintext
+📊 Frequency Analysis for 'bovine' (case_sensitive=False, loose substring match)
+============================================================
+  acad    :    501 hits | 140449282 tokens | 0.04 /10k
+  web     :    208 hits | 149036464 tokens | 0.01 /10k
+  mag     :    162 hits | 146417442 tokens | 0.01 /10k
+  fic     :    109 hits | 142585624 tokens | 0.01 /10k
+  blog    :     92 hits | 143156927 tokens | 0.01 /10k
+  tvm     :     71 hits | 162287598 tokens | 0.00 /10k
+  news    :     68 hits | 143377305 tokens | 0.00 /10k
+  spok    :     41 hits | 151501397 tokens | 0.00 /10k
+------------------------------------------------------------
+TOTAL: 1252 hits across 8 genres (~1178812039 tokens)
+time elapsed: 0 days 00:00:35.216885
+```
+
 
 ______________________
 
@@ -99,13 +141,13 @@ statement = "Establishing a system for the identification and registration of [M
 masked_token="bovine"
 token_mask="[MASK]"
 
-results = got3.embedding.legal_bert.pipe(statement=statement, # the input text with a [MASK] token
-                                         masked_token=masked_token, # any token
-                                         token_mask=token_mask, # Default to [MASK]
-                                         top_k=5,  # Set number of top predictions to return
-                                         visualize=True, # Set to True to display barchart visualization
-                                         json_output=False, # Set to True for JSON output
-                                         model_name="nlpaueb/legal-bert-base-uncased") # use small for similar results and lesser footprint
+got3.embedding.legal_bert.pipe(statement=statement, # the input text with a [MASK] token
+                               masked_token=masked_token, # any token
+                               token_mask=token_mask, # Default to [MASK]
+                               top_k=5,  # Set number of top predictions to return
+                               visualize=True, # Set to True to display barchart visualization
+                               json_output=False, # Set to True for JSON output
+                               model_name="nlpaueb/legal-bert-base-uncased") # use small for similar results and lesser footprint
 ```
 ```plaintext
 Top predictions for masked token (highest to lowest):
@@ -168,136 +210,7 @@ Context: is to enforce law created by Congress , not to **modify** it . Yes , he
 
 ____________________-
 
-## Corpus of Contemporary American English (COCA)
 
-You can gain access to the English Corpora website and register for academic / personal use of the COCA corpus at [https://www.english-corpora.org/coca/](https://www.english-corpora.org/coca/). If your university or organization has a subscription, you may be able to access the platform for free or at a reduced cost. Namely, your university or organization (probably the central library) may already have a subscription to the English Corpora dataset downloads and you can check with them to see if you can get access to the full dataset. You must agree to the terms of service and licensing agreement before downloading and using the COCA corpus files, which is namely to **not redistribute the corpus files** and to **not use the corpus for commercial purposes**.
-
-- Academic (`acad`) - Legal academic texts
-- Blog (`blog`) - Legal blogs and commentary  
-- Fiction (`fic`) - Legal fiction and narratives
-- Magazine (`mag`) - Legal magazine articles
-- News (`news`) - Legal news coverage
-- Spoken (`spok`) - Legal oral arguments and speeches
-- TV/Movie (`tvm`) - Legal drama and media
-- Web (`web`) - Legal web content
-
-### Method 1: Using Convenience Functions (Recommended for Beginners)
-
-```python
-import getout_of_text_3 as got3
-
-# 1. Read COCA corpus files
-corpus_data = got3.read_corpora("path/to/coca/files", "my_legal_corpus")
-
-# 2. Search for legal terms with context
-results = got3.search_keyword_corpus(
-    keyword="constitutional",
-    db_dict=corpus_data,
-    case_sensitive=False,
-    show_context=True,
-    context_words=5,
-    output="print" # json or print
-)
-
-# 3. Find collocates (words that appear near your target term)
-collocates = got3.find_collocates(
-    keyword="justice",
-    db_dict=corpus_data,
-    window_size=5,
-    min_freq=2
-)
-
-# 4. Analyze frequency across genres
-freq_analysis = got3.keyword_frequency_analysis(
-    keyword="legal",
-    db_dict=corpus_data
-)
-print(freq_analysis['by_genre'][:2])  # preview
-
-# Relative frequency per 10k tokens
-freq_rel = got3.keyword_frequency_analysis(
-    keyword="legal",
-    db_dict=corpus_data,
-    relative=True
-)
-```
-
-### Method 2: Using LegalCorpus Class (Object-Oriented Approach)
-
-```python
-import getout_of_text_3 as got3
-
-# Initialize the corpus manager
-corpus = got3.LegalCorpus()
-
-# Load multiple corpora
-constitutional_corpus = corpus.read_corpora("constitutional-texts", "constitutional")
-case_law_corpus = corpus.read_corpora("case-law-texts", "cases")
-
-# Manage your corpus collection
-print("Available corpora:", corpus.list_corpora())
-corpus.corpus_summary()
-
-# Access specific corpus for analysis
-constitutional_data = corpus.get_corpus("constitutional")
-
-# Perform analyses using class methods
-search_results = corpus.search_keyword_corpus("amendment", constitutional_data)
-collocate_results = corpus.find_collocates("amendment", constitutional_data)
-freq_results = corpus.keyword_frequency_analysis("amendment", constitutional_data)
-```
-
-### Complete Research Workflow Example
-
-Here's a complete example for analyzing constitutional language across COCA genres:
-
-```python
-import getout_of_text_3 as got3
-
-# Step 1: Load your COCA corpus data
-print("Loading COCA corpus for constitutional analysis...")
-corpus_data = got3.read_corpora("coca-samples-text", "constitutional_study")
-
-# Step 2: Search for constitutional terms with context
-print("Searching for 'constitutional' with context...")
-constitutional_results = got3.search_keyword_corpus(
-    "constitutional", 
-    corpus_data, 
-    show_context=True, 
-    context_words=4
-)
-
-# Step 3: Find collocates to understand language patterns
-print("Finding collocates for 'constitutional'...")
-constitutional_collocates = got3.find_collocates(
-    "constitutional", 
-    corpus_data, 
-    window_size=4, 
-    min_freq=2
-)
-
-# Step 4: Analyze frequency patterns across genres
-print("Analyzing frequency patterns...")
-constitutional_freq = got3.keyword_frequency_analysis(
-    "constitutional", 
-    corpus_data
-)
-
-print("🎯 Constitutional Language Analysis Complete!")
-print("Results available for further statistical analysis and publication.")
-```
-
-
-## For Legal Researchers
-
-This toolkit is specifically designed to support:
-
-- **Constitutional Law Research** - Analyze constitutional language patterns across genres
-- **Judicial Opinion Analysis** - Study linguistic patterns in legal decisions  
-- **Legal Corpus Linguistics** - Examine legal language evolution over time
-- **Comparative Legal Analysis** - Compare legal language usage across different contexts
-- **Open Science Initiatives** - Enable reproducible legal research methodologies
-- **Digital Humanities** - Support computational approaches to legal scholarship
 
 ## Documentation
 
