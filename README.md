@@ -2,9 +2,28 @@
 
 The `getout_of_text3` module is a comprehensive Python library promoting open and reproducible computational forensic linguistics toolsets for data scientists and legal scholars performing textual analysis with popular corpora such as **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora.
 
-## 🎯 Overview of Features for Legal & Linguistic Scholars
+
+## Table of Contents
+
+- [Overview](#overview)
+    - [Key Features for Legal & Linguistic Scholars](#-features-for-legal--linguistic-scholars)
+- [Getting Started](#getting-started)
+    - [Installation](#installation)
+    - [Corpus of Contemporary American English (COCA)](#corpus-of-contemporary-american-english-coca)
+        - [Genres & Years](#genres--years)
+        - [Read the Dataset](#read-the-dataset)
+        - [Search for Keyword in Context](#search-the-corpus-for-a-keyword)
+        - [Search for Keyword Distribution across Genres](#Search-for-Keyword-Distribution-across-Genres)
+    - [Legal Bert Text Masking](#legal-bert-text-masking)
+    - [EmbeddingGemma Document Similarity & Context Ranking](#embeddinggemma-document-similarity--context-ranking)
+- [Documentation](#documentation)
+- [Support](#support)
+
+## Overview
 
 The `got3` module aims to provide simpler toolsets to promote the discovery of the *'ordinary meaning'* of words in and out of legal contexts using computational techniques, with a focus on delivering an open-source tool built around three main areas of functionality:
+
+### 🎯 Key Features for Legal & Linguistic Scholars
 
 - 📚 **Corpus Linguistics**: Read and manage COCA corpus files across multiple genres
     - 🕵 **Keyword Search**: Find terms with contextual information across legal texts
@@ -67,7 +86,7 @@ import getout_of_text_3 as got3
 coca_corpus = got3.read_corpus('./coca-text/')
 ```
 
-#### Search the Corpus for a Keyword
+#### Search for Keyword in Context
 
 - your `coca_corpus` is a **dictionary of dataframes**, one for each genre, that you can use for further analysis.
 
@@ -95,6 +114,8 @@ Total hits across all genre_years: 1196
 Genre_years with matches: 206
 time elapsed: 0 days 00:00:21.415171
 ```
+
+#### Search for Keyword Distribution across Genres
 
 - get a distribution of a keyword across genres, for example still using `bovine`:
 
