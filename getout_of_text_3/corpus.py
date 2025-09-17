@@ -19,6 +19,29 @@ except ImportError:
 class LegalCorpus:
 
     @staticmethod
+    def _process_collocates(args):
+        genre_year, df, keyword, window_size, min_freq, case_sensitive = args
+        # Use loose substring regex for matching
+        flags = 0 if case_sensitive else re.IGNORECASE
+        pattern = re.compile(re.escape(keyword), flags)
+        genre_counter = Counter()
+        keyword_instances = 0
+        for text in df['text']:
+            text_str = str(text)
+            # Tokenize (use split for speed, fallback to nltk if available and desired)
+            words = text_str.split()
+            # Find all positions where the keyword appears as a substring (loose match)
+            positions = [i for i, w in enumerate(words) if pattern.search(w)]
+            keyword_instances += len(positions)
+            for pos in positions:
+                start = max(0, pos - window_size)
+                end = min(len(words), pos + window_size + 1)
+                context_words = words[start:pos] + words[pos+1:end]
+                context_words = [w for w in context_words if w.isalpha() and len(w) > 2]
+                genre_counter.update(context_words)
+        return genre_year, genre_counter, keyword_instances
+
+    @staticmethod
     def _process_genre(args):
         genre, year_dict, keyword, flags, relative = args
         pattern = re.compile(re.escape(keyword), flags)
@@ -426,7 +449,7 @@ class LegalCorpus:
                 json_results[genre_year] = genre_dict
             return json_results
 
-    def find_collocates(self, keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
+    def find_collocates(self, keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False, parallel=True, n_jobs=None):
         """
         Find words that frequently appear near the keyword (collocates).
         
@@ -440,86 +463,63 @@ class LegalCorpus:
         - window_size: Number of words to look at on each side
         - min_freq: Minimum frequency for a word to be considered a collocate
         - case_sensitive: Whether to perform case-sensitive search
+        - parallel: Use multiprocessing by genre (default True)
+        - n_jobs: Number of processes (default n-1)
         
         Returns:
         - Dictionary with collocate data
         """
-        print(f"🔗 Collocate Analysis for '{keyword}' (window: ±{window_size} words)")
+        print(f"🔗 Collocate Analysis for '{keyword}' (window: ±{window_size} words, loose substring match)")
         print("=" * 60)
-        
-        if case_sensitive:
-            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b')
-        else:
-            pattern = re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
-        
-        all_collocates = Counter()
-        genre_collocates = {}
 
         # Flatten structure if needed
         flat_dict = self._flatten_corpus_structure(db_dict)
+        all_collocates = Counter()
+        genre_collocates = {}
+        genre_results = []
 
-        for genre_year, df in flat_dict.items():
+        items = list(flat_dict.items())
+        if parallel and len(items) > 1:
+            if n_jobs is None:
+                n_jobs = max(1, mp.cpu_count() - 1)
+            try:
+                args_list = [(genre_year, df, keyword, window_size, min_freq, case_sensitive) for genre_year, df in items]
+                with mp.Pool(processes=n_jobs) as pool:
+                    results = pool.map(LegalCorpus._process_collocates, args_list)
+                for genre_year, genre_counter, keyword_instances in results:
+                    genre_collocates[genre_year] = genre_counter
+                    all_collocates.update(genre_counter)
+                    genre_results.append((genre_year, genre_counter, keyword_instances))
+            except Exception as e:
+                print(f"⚠️ Parallel processing failed: {e}. Falling back to sequential processing...")
+                parallel = False
+
+        if not parallel or len(items) <= 1:
+            for genre_year, df in items:
+                genre_year, genre_counter, keyword_instances = LegalCorpus._process_collocates((genre_year, df, keyword, window_size, min_freq, case_sensitive))
+                genre_collocates[genre_year] = genre_counter
+                all_collocates.update(genre_counter)
+                genre_results.append((genre_year, genre_counter, keyword_instances))
+
+        # Print top collocates for each genre
+        for genre_year, genre_counter, keyword_instances in genre_results:
             print(f"\n📚 {genre_year.upper()} Genre Collocates:")
-            
-            # Create a fresh counter for each genre
-            genre_counter = Counter()
-            keyword_instances = 0
-            
-            for text in df['text']:
-                text_str = str(text).lower() if not case_sensitive else str(text)
-                
-                # Use NLTK if available, fallback to split
-                if NLTK_AVAILABLE:
-                    try:
-                        words = nltk.word_tokenize(text_str)
-                    except:
-                        words = text_str.split()
-                else:
-                    words = text_str.split()
-                
-                # Find all positions of the keyword
-                keyword_positions = []
-                for i, word in enumerate(words):
-                    if (not case_sensitive and word.lower() == keyword.lower()) or (case_sensitive and word == keyword):
-                        keyword_positions.append(i)
-                
-                keyword_instances += len(keyword_positions)
-                
-                # Extract collocates around each keyword occurrence
-                for pos in keyword_positions:
-                    start = max(0, pos - window_size)
-                    end = min(len(words), pos + window_size + 1)
-                    
-                    # Get surrounding words (excluding the keyword itself)
-                    context_words = words[start:pos] + words[pos+1:end]
-                    
-                    # Filter out punctuation and very short words
-                    context_words = [w for w in context_words if w.isalpha() and len(w) > 2]
-                    
-                    genre_counter.update(context_words)
-                    all_collocates.update(context_words)
-            
-            # Store the results for this genre
-            genre_collocates[genre_year] = genre_counter
-            
-            # Display top collocates for this genre
             top_collocates = genre_counter.most_common(10)
             if top_collocates:
                 print(f"  Found {keyword_instances} instances of '{keyword}' in {genre_year}")
-                # Show all results, but mark those below min_freq
                 for word, freq in top_collocates:
                     marker = "  " if freq >= min_freq else "* "
                     print(f"{marker}{word:15s}: {freq:3d} times")
             else:
                 print(f"  Found {keyword_instances} instances, but no significant collocates")
-        
+
         print(f"\n🎯 TOP OVERALL COLLOCATES (min frequency: {min_freq}):")
         print("-" * 40)
         top_overall = all_collocates.most_common(20)
         for word, freq in top_overall:
             if freq >= min_freq:
                 print(f"{word:15s}: {freq:3d} occurrences")
-            
+
         return {
             'all_collocates': dict(all_collocates),
             'by_genre': dict(genre_collocates),
