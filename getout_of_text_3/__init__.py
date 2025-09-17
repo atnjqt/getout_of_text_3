@@ -77,13 +77,21 @@ def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=
     corpus = LegalCorpus()
     return corpus.find_collocates(keyword, db_dict, window_size, min_freq, case_sensitive)
 
-def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False, relative=True):
+def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False, relative=True, parallel=True, n_jobs=None):
     """Convenience function for frequency analysis.
 
     Parameters mirror LegalCorpus.keyword_frequency_analysis
+    Accepts parallel and n_jobs for multiprocessing.
     """
     corpus = LegalCorpus()
-    return corpus.keyword_frequency_analysis(keyword, db_dict, case_sensitive=case_sensitive, relative=relative)
+    return corpus.keyword_frequency_analysis(
+        keyword,
+        db_dict,
+        case_sensitive=case_sensitive,
+        relative=relative,
+        parallel=parallel,
+        n_jobs=n_jobs
+    )
 
 # Backward compatibility / explicit public API
 __all__ = [

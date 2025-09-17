@@ -544,33 +544,31 @@ class LegalCorpus:
         print("⚠️ kwic() is deprecated. Use search_keyword_corpus() instead.")
         return self.search_keyword_corpus(keyword, db_dict, **kwargs)
 
-    def keyword_frequency_analysis(self, keyword, db_dict, case_sensitive=False, relative=True):
+    def keyword_frequency_analysis(self, keyword, db_dict, case_sensitive=False, relative=True, parallel=True, n_jobs=None):
         """Compute frequency of a keyword across a nested corpus dict (genre -> year -> DataFrame),
-        with per-genre, per-year, and per-text_id breakdowns.
+        with per-genre, per-year, and per-text_id breakdowns. Now supports parallel processing by genre.
 
         Parameters:
             keyword (str): Term to count
             db_dict (dict): genre -> year -> DataFrame(['text_id', 'text'])
             case_sensitive (bool): case sensitivity flag
             relative (bool): include per 10k tokens metric
+            parallel (bool): use multiprocessing (default True)
+            n_jobs (int|None): number of processes (default: n-1)
         Returns:
             dict summary
         """
         if not keyword:
             raise ValueError("keyword must be a non-empty string")
-        # Always use loose substring search, case-insensitive by default
         flags = 0 if case_sensitive else re.IGNORECASE
         pattern = re.compile(re.escape(keyword), flags)
 
-        results_list = []
-        total_count = 0
-        grand_tokens = 0
-        per_text = {}  # genre_year_textid: count
-
-        for genre, year_dict in db_dict.items():
+        def process_genre(args):
+            genre, year_dict = args
             genre_count = 0
             genre_tokens = 0
             years = {}
+            per_text_local = {}
             for year, df in year_dict.items():
                 year_count = 0
                 year_tokens = 0
@@ -584,14 +582,42 @@ class LegalCorpus:
                     year_count += count
                     year_tokens += tokens
                     key = f"{genre}_{year}_{text_id}"
-                    per_text[key] = {'count': count, 'tokens': tokens}
+                    per_text_local[key] = {'count': count, 'tokens': tokens}
                 years[year] = {'count': year_count, 'tokens': year_tokens}
             entry = {'genre': genre, 'count': genre_count, 'tokens': genre_tokens, 'years': years}
             if relative and genre_tokens:
                 entry['rel_per_10k'] = (genre_count / genre_tokens) * 10000
-            results_list.append(entry)
-            total_count += genre_count
-            grand_tokens += genre_tokens
+            return entry, per_text_local, genre_count, genre_tokens
+
+        genres = list(db_dict.items())
+        results_list = []
+        total_count = 0
+        grand_tokens = 0
+        per_text = {}
+
+        if parallel and len(genres) > 1:
+            if n_jobs is None:
+                n_jobs = max(1, mp.cpu_count() - 1)
+            try:
+                with mp.Pool(processes=n_jobs) as pool:
+                    results = pool.map(process_genre, genres)
+                for entry, per_text_local, genre_count, genre_tokens in results:
+                    results_list.append(entry)
+                    per_text.update(per_text_local)
+                    total_count += genre_count
+                    grand_tokens += genre_tokens
+            except Exception as e:
+                print(f"⚠️ Parallel processing failed: {e}. Falling back to sequential processing...")
+                parallel = False
+
+        if not parallel or len(genres) <= 1:
+            for args in genres:
+                entry, per_text_local, genre_count, genre_tokens = process_genre(args)
+                results_list.append(entry)
+                per_text.update(per_text_local)
+                total_count += genre_count
+                grand_tokens += genre_tokens
+
         results_list.sort(key=lambda x: x['count'], reverse=True)
 
         summary = {
