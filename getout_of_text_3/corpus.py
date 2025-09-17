@@ -17,6 +17,34 @@ except ImportError:
     print("⚠️ NLTK not available. Some features may use fallback methods.")
 
 class LegalCorpus:
+
+    @staticmethod
+    def _process_genre(args):
+        genre, year_dict, keyword, flags, relative = args
+        pattern = re.compile(re.escape(keyword), flags)
+        genre_count = 0
+        genre_tokens = 0
+        years = {}
+        per_text_local = {}
+        for year, df in year_dict.items():
+            year_count = 0
+            year_tokens = 0
+            for idx, row in df.iterrows():
+                text_id = str(row['text_id']) if 'text_id' in row else str(idx)
+                s = str(row['text'])
+                count = len(pattern.findall(s))
+                tokens = len(s.split())
+                genre_count += count
+                genre_tokens += tokens
+                year_count += count
+                year_tokens += tokens
+                key = f"{genre}_{year}_{text_id}"
+                per_text_local[key] = {'count': count, 'tokens': tokens}
+            years[year] = {'count': year_count, 'tokens': year_tokens}
+        entry = {'genre': genre, 'count': genre_count, 'tokens': genre_tokens, 'years': years}
+        if relative and genre_tokens:
+            entry['rel_per_10k'] = (genre_count / genre_tokens) * 10000
+        return entry, per_text_local, genre_count, genre_tokens
     """
     Main class for handling legal corpora and BYU datasets.
     
@@ -561,34 +589,6 @@ class LegalCorpus:
         if not keyword:
             raise ValueError("keyword must be a non-empty string")
         flags = 0 if case_sensitive else re.IGNORECASE
-        pattern = re.compile(re.escape(keyword), flags)
-
-        def process_genre(args):
-            genre, year_dict = args
-            genre_count = 0
-            genre_tokens = 0
-            years = {}
-            per_text_local = {}
-            for year, df in year_dict.items():
-                year_count = 0
-                year_tokens = 0
-                for idx, row in df.iterrows():
-                    text_id = str(row['text_id']) if 'text_id' in row else str(idx)
-                    s = str(row['text'])
-                    count = len(pattern.findall(s))
-                    tokens = len(s.split())
-                    genre_count += count
-                    genre_tokens += tokens
-                    year_count += count
-                    year_tokens += tokens
-                    key = f"{genre}_{year}_{text_id}"
-                    per_text_local[key] = {'count': count, 'tokens': tokens}
-                years[year] = {'count': year_count, 'tokens': year_tokens}
-            entry = {'genre': genre, 'count': genre_count, 'tokens': genre_tokens, 'years': years}
-            if relative and genre_tokens:
-                entry['rel_per_10k'] = (genre_count / genre_tokens) * 10000
-            return entry, per_text_local, genre_count, genre_tokens
-
         genres = list(db_dict.items())
         results_list = []
         total_count = 0
@@ -599,8 +599,9 @@ class LegalCorpus:
             if n_jobs is None:
                 n_jobs = max(1, mp.cpu_count() - 1)
             try:
+                args_list = [(genre, year_dict, keyword, flags, relative) for genre, year_dict in genres]
                 with mp.Pool(processes=n_jobs) as pool:
-                    results = pool.map(process_genre, genres)
+                    results = pool.map(LegalCorpus._process_genre, args_list)
                 for entry, per_text_local, genre_count, genre_tokens in results:
                     results_list.append(entry)
                     per_text.update(per_text_local)
@@ -611,8 +612,8 @@ class LegalCorpus:
                 parallel = False
 
         if not parallel or len(genres) <= 1:
-            for args in genres:
-                entry, per_text_local, genre_count, genre_tokens = process_genre(args)
+            for genre, year_dict in genres:
+                entry, per_text_local, genre_count, genre_tokens = LegalCorpus._process_genre((genre, year_dict, keyword, flags, relative))
                 results_list.append(entry)
                 per_text.update(per_text_local)
                 total_count += genre_count
