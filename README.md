@@ -1,29 +1,52 @@
-# getout_of_text3: Enhanced Legal Text Analysis Toolkit
+# getout-of-text-3: A Python Toolkit for Legal Text Analysis and Open Science
 
-The `getout_of_text3` module is a comprehensive Python library promoting open and reproducible computational forensic linguistics toolsets for data scientists and legal scholars performing textual analysis with popular corpora such as **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora.
+- Author: Etienne P Jacquot (`@atnjqt`)
+
+## Introduction
+
+The `getout_of_text3` module is a comprehensive Python library promoting open and reproducible computational forensic linguistics toolsets for data scientists and legal scholars performing textual analysis with popular corpora such as **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora by providing simpler toolsets to promote the discovery of the *'ordinary meaning'* of words using NLP, Embedding Models, and AI Agentic LLMs.
+
+### Installation
+
+You can install `getout_of_text3` using pip. I recommend setting up a virtual environment using [venv](https://docs.python.org/3/library/venv.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) to manage dependencies.
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
+pip install getout-of-text-3 -U
+```
 
 
 ## Table of Contents
 
 - [Overview](#overview)
-    - [Key Features for Legal & Linguistic Scholars](#-features-for-legal--linguistic-scholars)
+    - [Key Features for Legal & Linguistic Scholars](#key-features-for-legal--linguistic-scholars)
 - [Getting Started](#getting-started)
     - [Installation](#installation)
     - [Corpus of Contemporary American English (COCA)](#corpus-of-contemporary-american-english-coca)
         - [Genres & Years](#genres--years)
         - [Read the Dataset](#read-the-dataset)
-        - [Search for Keyword in Context](#search-the-corpus-for-a-keyword)
-        - [Search for Keyword Distribution across Genres](#Search-for-Keyword-Distribution-across-Genres)
+        - [Search for Keyword in Context](#search-for-keyword-in-context)
+        - [Search for Keyword Distribution across Genres](#search-for-keyword-distribution-across-genres)
+- [NLP](#nlp)
+    - [Text Preprocessing](#text-preprocessing)
+- [AI Agents](#ai-agents)
+    - [Langchain & AWS Bedrock](#langchain--aws-bedrock)
+- [Embedding Models](#embedding-models)
     - [Legal Bert Text Masking](#legal-bert-text-masking)
     - [EmbeddingGemma Document Similarity & Context Ranking](#embeddinggemma-document-similarity--context-ranking)
 - [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Citation](#citation)
 - [Support](#support)
+- [Acknowledgements](#acknowledgements)
 
 ## Overview
 
 The `got3` module aims to provide simpler toolsets to promote the discovery of the *'ordinary meaning'* of words in and out of legal contexts using computational techniques, with a focus on delivering an open-source tool built around three main areas of functionality:
 
-### 🎯 Key Features for Legal & Linguistic Scholars
+### Key Features for Legal & Linguistic Scholars
 
 - 📚 **Corpus Linguistics**: Read and manage COCA corpus files across multiple genres
     - 🕵 **Keyword Search**: Find terms with contextual information across legal texts
@@ -40,16 +63,6 @@ The `got3` module aims to provide simpler toolsets to promote the discovery of t
 
 
 ## Getting Started
-
-### Installation
-
-You can install `getout_of_text3` using pip. I recommend setting up a virtual environment using [venv](https://docs.python.org/3/library/venv.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) to manage dependencies.
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
-pip install getout-of-text-3 -U
-```
 
 The below examples demonstrate how to use the `getout_of_text3` module for various tasks using corpus linguistics tools, embedding models, and AI language models.
 
@@ -149,7 +162,20 @@ time elapsed: 0 days 00:00:35.216885
 
 ______________________
 
-______________________
+## NLP
+
+### Text Preprocessing
+
+KWIC, Collocates, Frequency Analysis, etc.
+
+## AI Agents
+
+### Langchain & AWS Bedrock
+
+`getout_of_text3` can provide filtered results to pass to AI agents for further analysis, summarization, or technical steps in a toolchain. TBD as I've not yet implemented this in the toolset but examples are provided in `examples/ai/` directory.
+
+## Embedding Models
+
 ### Legal Bert Text Masking
 
 `getout_of_text3` provides a convenient interface to use these models for masked word prediction and other embedding tasks, namely using `got3.embedding.legal_bert.pipe()` function, `nlpaueb/legal-bert-base-uncased`, which is specifically trained on legal documents and is the most popular taged 'legal' on Hugging Face (https://huggingface.co/nlpaueb/legal-bert-base-uncased).
@@ -243,7 +269,7 @@ We welcome contributions from legal scholars and developers! Please see our cont
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
 
 ## Citation
 
