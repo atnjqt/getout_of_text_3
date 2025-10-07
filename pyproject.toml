@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "getout-of-text-3"
-version = "0.2.39"
+version = "0.3.3"
 description = "A Python toolkit for working with legal corpora and English datasets."
 authors = [
 	{ name = "Etienne Jacquot", email = "jacquot.etienne@gmail.com" }

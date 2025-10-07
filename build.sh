@@ -36,6 +36,31 @@ sed -i.bak "s/version = \"$current_version\"/version = \"$version\"/" pyproject.
 # Update _version.py first line
 sed -i.bak "1s/.*/__version__ = \"$version\"/" getout_of_text_3/_version.py
 
+# Update CITATION.cff version (and optionally date-released)
+if [ -f CITATION.cff ]; then
+  citation_current_version=$(grep -E '^version:' CITATION.cff | awk '{print $2}')
+  # Only proceed if a version line exists
+  if [ -n "$citation_current_version" ]; then
+    sed -i.bak "s/^version: .*/version: $version/" CITATION.cff
+    # Ask whether to refresh release date
+    today=$(date +%Y-%m-%d)
+    if grep -q '^date-released:' CITATION.cff; then
+      read -p "  👉 Update CITATION.cff date-released to $today? (y/n): " upd_date
+      if [ "$upd_date" = "y" ]; then
+        sed -i.bak "s/^date-released: .*/date-released: $today/" CITATION.cff
+        echo "    CITATION.cff date-released updated to $today ✅"
+      else
+        echo "    CITATION.cff date-released left unchanged."
+      fi
+    fi
+    echo "    CITATION.cff version updated from $citation_current_version to $version ✅"
+  else
+    echo "    WARNING: Could not detect version line in CITATION.cff – no update applied."
+  fi
+else
+  echo "    NOTE: CITATION.cff not found; skipping citation metadata update."
+fi
+
 # Clean old builds
 rm -rf dist/
 rm -rf build/

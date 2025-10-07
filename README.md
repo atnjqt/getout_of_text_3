@@ -172,7 +172,33 @@ KWIC, Collocates, Frequency Analysis, etc.
 
 ### Langchain & AWS Bedrock
 
-`getout_of_text3` can provide filtered results to pass to AI agents for further analysis, summarization, or technical steps in a toolchain. TBD as I've not yet implemented this in the toolset but examples are provided in `examples/ai/` directory.
+`getout_of_text3` can provide filtered results to pass to AI agents for further analysis, summarization, or technical steps in a toolchain. TBD as I've not yet implemented this in the toolset but examples are provided in `examples/ai/demo.ipynb` reference provided.
+
+> 🚨 This requires an AWS `named_profile` and will incur marginal costs! TBD on future versions supporting AI agents beyond AWS Bedrock.
+
+
+```python
+import pandas as pd
+import getout_of_text_3 as got3
+from getout_of_text_3 import ScotusAnalysisTool, ScotusFilteredAnalysisTool
+from langchain.chat_models import init_chat_model
+
+model = init_chat_model(
+    "openai.gpt-oss-120b-1:0",
+    model_provider="bedrock_converse",
+    credentials_profile_name="atn-developer",
+    max_tokens=128000
+)
+# Assume you built db_dict_formatted (volume -> DataFrame with columns ['case_id','text'])
+search_tool = ScotusAnalysisTool(model=model, db_dict_formatted=db_dict_formatted)
+filtered_tool = ScotusFilteredAnalysisTool(model=model)
+
+# Quick term filter & summarization
+text_result = search_tool._run(keyword="bank", 
+                               analysis_focus="general")
+```
+
+![alt text](img/ai_agent_example_bank.png)
 
 ## Embedding Models
 

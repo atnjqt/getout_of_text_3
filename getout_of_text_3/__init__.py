@@ -31,6 +31,12 @@ Advancing legal scholarship through open computational tools! ⚖️
 
 from getout_of_text_3._config import options
 from getout_of_text_3.corpus import LegalCorpus
+from getout_of_text_3.ai_agents import (
+    ScotusAnalysisTool,
+    ScotusFilteredAnalysisTool,
+    ScotusAnalysisInput,
+    ScotusFilteredAnalysisInput,
+)
 
 def read_corpus(dir_of_text_files=None):
     """
@@ -121,6 +127,10 @@ __all__ = [
     'keyword_frequency_analysis',
     'embedding',
     'options',
+    'ScotusAnalysisTool',
+    'ScotusFilteredAnalysisTool',
+    'ScotusAnalysisInput',
+    'ScotusFilteredAnalysisInput',
     '__version__'
 ]
 
