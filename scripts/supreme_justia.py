@@ -47,8 +47,8 @@ def construct_pdf_url(case_link):
 if len(sys.argv) > 1:
     try:
         volume_number = int(sys.argv[1])
-        if not (502 <= volume_number <= 605):
-            print("Volume number must be between 502 and 605. Exiting.")
+        if not (1 <= volume_number <= 605):
+            print("Volume number must be between 1 and 605. Exiting.")
             sys.exit(1)
     except ValueError:
         print("Please provide a valid number as the first argument. Exiting.")

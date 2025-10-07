@@ -30,9 +30,17 @@ Advancing legal scholarship through open computational tools! ⚖️
 """
 
 from getout_of_text_3._config import options
-
-# Expose main corpus class
 from getout_of_text_3.corpus import LegalCorpus
+
+def read_corpus(dir_of_text_files=None):
+    """
+    Convenience function to read COCA corpus files.
+    Creates a temporary LegalCorpus instance and loads the data.
+    
+    Returns the loaded corpus dictionary.
+    """
+    corpus = LegalCorpus()
+    return corpus.read_corpus(dir_of_text_files)
 
 # Expose main functions for easy access
 def read_corpora(dir_of_text_files, corpora_name, genre_list=None):
@@ -45,39 +53,116 @@ def read_corpora(dir_of_text_files, corpora_name, genre_list=None):
     corpus = LegalCorpus()
     return corpus.read_corpora(dir_of_text_files, corpora_name, genre_list)
 
-def search_keyword_corpus(keyword, db_dict, case_sensitive=False, show_context=True, context_words=5):
+def search_keyword_corpus(keyword, db_dict, case_sensitive=False, show_context=True, context_words=5, output='print', parallel=True, n_jobs=None):
     """
     Convenience function for keyword search across corpus.
+    
+    Parameters:
+    - keyword: The word/phrase to search for
+    - db_dict: Dictionary structure containing DataFrames
+    - case_sensitive: Whether to perform case-sensitive search
+    - show_context: Whether to show surrounding context
+    - context_words: Number of words to show on each side for context
+    - output: 'print' to display results, 'json' to return structured data
+    - parallel: Whether to use parallel processing (default: True)
+    - n_jobs: Number of parallel processes (default: CPU count - 1)
     """
     corpus = LegalCorpus()
-    return corpus.search_keyword_corpus(keyword, db_dict, case_sensitive, show_context, context_words)
+    return corpus.search_keyword_corpus(
+        keyword,
+        db_dict,
+        case_sensitive=case_sensitive,
+        show_context=show_context,
+        context_words=context_words,
+        output=output,
+        parallel=parallel,
+        n_jobs=n_jobs
+    )
 
-def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False):
+def find_collocates(keyword, db_dict, window_size=5, min_freq=2, case_sensitive=False, parallel=True, n_jobs=None):
     """
     Convenience function for collocate analysis.
+    Accepts parallel and n_jobs for multiprocessing.
     """
     corpus = LegalCorpus()
-    return corpus.find_collocates(keyword, db_dict, window_size, min_freq, case_sensitive)
+    return corpus.find_collocates(
+        keyword,
+        db_dict,
+        window_size=window_size,
+        min_freq=min_freq,
+        case_sensitive=case_sensitive,
+        parallel=parallel,
+        n_jobs=n_jobs
+    )
 
-def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False):
-    """
-    Convenience function for frequency analysis.
+def keyword_frequency_analysis(keyword, db_dict, case_sensitive=False, relative=True, parallel=True, n_jobs=None):
+    """Convenience function for frequency analysis.
+
+    Parameters mirror LegalCorpus.keyword_frequency_analysis
+    Accepts parallel and n_jobs for multiprocessing.
     """
     corpus = LegalCorpus()
-    return corpus.keyword_frequency_analysis(keyword, db_dict, case_sensitive)
+    return corpus.keyword_frequency_analysis(
+        keyword,
+        db_dict,
+        case_sensitive=case_sensitive,
+        relative=relative,
+        parallel=parallel,
+        n_jobs=n_jobs
+    )
 
-# ...existing code...
-#from getout_of_text_3.io.file import _read_file as read_file
-#from getout_of_text_3.tools import sjoin, sjoin_nearest
+# Backward compatibility / explicit public API
+__all__ = [
+    'LegalCorpus',
+    'read_corpus',
+    'read_corpora',
+    'search_keyword_corpus',
+    'find_collocates',
+    'keyword_frequency_analysis',
+    'embedding',
+    'options',
+    '__version__'
+]
 
-#import getout_of_text_3.datasets
+# Import embedding modules
+try:
+    from . import legal_bert, embeddinggemma
+    # Create embedding namespace
+    class EmbeddingModule:
+        def __init__(self):
+            # Make legal_bert module directly accessible
+            setattr(self, 'legal_bert', legal_bert)
+            # Make embeddinggemma module directly accessible
+            setattr(self, 'gemma', embeddinggemma)
+    
+    embedding = EmbeddingModule()
+except ImportError:
+    # If dependencies aren't available, create placeholder
+    class LegalBertPlaceholder:
+        def pipe(self, *args, **kwargs):
+            raise ImportError("Legal-BERT dependencies not installed. Run: pip install transformers torch matplotlib seaborn")
+        
+        def legal_bert(self, *args, **kwargs):
+            raise ImportError("Legal-BERT dependencies not installed. Run: pip install transformers torch matplotlib seaborn")
+    
+    class EmbeddingGemmaPlaceholder:
+        def gemma(self, *args, **kwargs):
+            raise ImportError("EmbeddingGemma dependencies not installed. Run: pip install sentence-transformers torch")
+        
+        def to_json(self, *args, **kwargs):
+            raise ImportError("EmbeddingGemma dependencies not installed. Run: pip install sentence-transformers torch")
+    
+    class EmbeddingModule:
+        def __init__(self):
+            setattr(self, 'legal_bert', LegalBertPlaceholder())
+            setattr(self, 'gemma', EmbeddingGemmaPlaceholder())
+    
+    embedding = EmbeddingModule()
 
 # make the interactive namespace easier to use
 # for `from getout_of_text3 import *` demos.
 import getout_of_text_3 as got3
 import pandas as pd
 import numpy as np
-
-# Move version import to the end to avoid circular import issues
 from . import _version
 __version__ = _version.get_versions()["version"]
