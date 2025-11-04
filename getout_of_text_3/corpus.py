@@ -441,11 +441,26 @@ class LegalCorpus:
             json_results = {}
             for genre_year, items in results.items():
                 genre_dict = {}
+                # Track occurrence count per text_id to create unique keys
+                text_id_counters = {}
+                
                 for item in items:
+                    text_id = str(item['text_id'])
+                    
+                    # Increment counter for this text_id
+                    if text_id not in text_id_counters:
+                        text_id_counters[text_id] = 0
+                    text_id_counters[text_id] += 1
+                    
+                    # Create unique key with occurrence number
+                    unique_key = f"{text_id}_{text_id_counters[text_id]}"
+                    
+                    # Store the match with unique key
                     if 'context' in item:
-                        genre_dict[str(item['text_id'])] = item['context']
+                        genre_dict[unique_key] = item['context']
                     else:
-                        genre_dict[str(item['text_id'])] = f"{item['matches']} matches"
+                        genre_dict[unique_key] = f"{item['matches']} matches"
+                
                 json_results[genre_year] = genre_dict
             return json_results
 
