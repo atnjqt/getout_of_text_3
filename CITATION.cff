@@ -12,8 +12,8 @@ abstract: |
   general English corpora, performing keyword-in-context (KWIC) searches, collocate
   analysis, frequency studies, and leveraging modern embedding models (Legal-BERT,
   EmbeddingGemma) to support transparent, reproducible research in law & linguistics.
-version: 0.4.0
-date-released: 2025-11-03
+version: 0.4.6
+date-released: 2025-11-10
 repository-code: https://github.com/atnjqt/getout_of_text3
 url: https://github.com/atnjqt/getout_of_text3
 license: MIT

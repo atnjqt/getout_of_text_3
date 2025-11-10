@@ -120,16 +120,19 @@ class LegalCorpus:
         else:
             raise ValueError("Unsupported file format. Please use CSV or TSV.")
 
-    def read_corpus(self, dir_of_text_files=None, show_progress=True, show_file_progress=True, log_every=0):
-        """Build a structured nested dictionary from COCA-style text folders.
+    def read_corpus(self, dir_of_text_files=None, corpus_name='coca', show_progress=True, show_file_progress=True, log_every=0):
+        """Build a structured dictionary from corpus text folders.
 
-        Structure returned: {genre -> (year OR file_num) -> DataFrame(['text_id', 'text'])}
+        Structure returned depends on corpus_name (both use nested structure):
+        - 'coca'/'diy': {genre: {year_or_id: DataFrame(['text_id', 'text'])}}
+        - 'glowbe': {country_code: {file_id: DataFrame(['text_id', 'text'])}}
 
         Parameters:
-            dir_of_text_files (str|None): Root directory containing genre subfolders (defaults to self.data_dir)
-            show_progress (bool): Show top-level genre progress bar.
-            show_file_progress (bool): Show per-genre file progress bar (requires tqdm).
-            log_every (int): If > 0, print a running line-count every N captured lines per genre.
+            dir_of_text_files (str|None): Root directory containing corpus subfolders (defaults to self.data_dir)
+            corpus_name (str): Corpus type - 'coca' (default), 'glowbe', or 'diy' (uses COCA format)
+            show_progress (bool): Show top-level progress bar.
+            show_file_progress (bool): Show per-file progress bar (requires tqdm).
+            log_every (int): If > 0, print a running line-count every N captured lines.
 
         Notes on progress behavior:
             Previously the single progress bar hit 100% once the last genre started, while large
@@ -142,10 +145,23 @@ class LegalCorpus:
                 raise ValueError("No data directory specified. Set data_dir first.")
             dir_of_text_files = self.data_dir
 
+        # Route to appropriate parser based on corpus_name
+        if corpus_name in ['coca', 'diy']:
+            return self._read_coca_structure(dir_of_text_files, show_progress, show_file_progress, log_every)
+        elif corpus_name == 'glowbe':
+            return self._read_glowbe_structure(dir_of_text_files, show_progress, show_file_progress, log_every)
+        else:
+            raise ValueError(f"Unknown corpus_name: '{corpus_name}'. Must be 'coca', 'glowbe', or 'diy'.")
+
+    def _read_coca_structure(self, dir_of_text_files, show_progress, show_file_progress, log_every):
+        """Parse COCA corpus structure: text_GENRE_YEAR or text_GENRE_ID format.
+        
+        Returns: {genre: {year_or_id: DataFrame}}
+        """
         coca_dict = {}
         genre_folders = [f for f in os.listdir(dir_of_text_files) if f.startswith('text_')]
 
-        genre_iter = tqdm(genre_folders, desc="Genres", unit="genre") if show_progress else genre_folders
+        genre_iter = tqdm(genre_folders, desc="COCA Genres", unit="genre") if show_progress else genre_folders
 
         for genre_folder in genre_iter:
             genre = genre_folder.split('_')[1]
@@ -196,6 +212,71 @@ class LegalCorpus:
             coca_dict[genre] = genre_dict
 
         return coca_dict
+
+    def _read_glowbe_structure(self, dir_of_text_files, show_progress, show_file_progress, log_every):
+        """Parse GloWbE corpus structure: text_COUNTRYCODE_* folders with w_*.txt files.
+        
+        Returns nested structure like COCA: {country_code: {file_id: DataFrame}}
+        """
+        glowbe_dict = {}
+        folders = [f for f in os.listdir(dir_of_text_files) if f.startswith('text_')]
+
+        folder_iter = tqdm(folders, desc="GloWbE Countries", unit="country") if show_progress else folders
+
+        for folder in folder_iter:
+            parts = folder.split('_')
+            # Extract country code (2nd part after 'text_')
+            # e.g., text_us_genl_ksl -> country='us'
+            country = parts[1] if len(parts) > 1 else 'unknown'
+            
+            folder_path = os.path.join(dir_of_text_files, folder)
+            
+            # GloWbE files use w_*.txt naming (e.g., w_us_g19.txt)
+            files = [fn for fn in os.listdir(folder_path) if fn.startswith('w_') and fn.endswith('.txt')]
+            file_iter = tqdm(files, desc=f"{country} files", unit="file", leave=False) if (show_file_progress and show_progress) else files
+            
+            # Initialize country dict if needed
+            if country not in glowbe_dict:
+                glowbe_dict[country] = {}
+            
+            for filename in file_iter:
+                # Extract file ID from filename: w_us_g19.txt -> 'g19'
+                file_id_match = re.search(r'w_[a-z]{2}_([a-z0-9]+)\.txt$', filename)
+                if not file_id_match:
+                    print(f"  ⚠️ Could not parse file ID from {filename}, skipping...")
+                    continue
+                file_id = file_id_match.group(1)
+                
+                file_path = os.path.join(folder_path, filename)
+                text_rows = []
+                captured_lines = 0
+                
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        for line in f:
+                            # GloWbE uses ## as line marker (not @@)
+                            if not line.startswith('##'):
+                                continue
+                            line = line.strip()
+                            parts_line = line.split(' ', 1)
+                            if len(parts_line) != 2:
+                                continue
+                            id_part = parts_line[0][2:]  # e.g., '##12345' -> '12345'
+                            text_part = parts_line[1]
+                            text_rows.append({'text_id': id_part, 'text': text_part})
+                            captured_lines += 1
+                            if log_every and captured_lines % log_every == 0:
+                                print(f"  {country}/{file_id}: {captured_lines} lines captured so far...")
+                except Exception as e:
+                    print(f"  ⚠️ Failed reading {file_path}: {e}")
+                
+                # Store DataFrame for this file_id
+                if text_rows:
+                    glowbe_dict[country][file_id] = pd.DataFrame(text_rows)
+            
+            print(f"Finished country: {country} (total files: {len(glowbe_dict[country])})")
+        
+        return glowbe_dict
 
     def _search_single_genre(self, genre_year_df_keyword_args):
         """
