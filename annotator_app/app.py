@@ -21,6 +21,7 @@ def strip_html_tags(text):
     return re.sub(clean, '', text)
 
 # Configure paths
+DATA_DIR = Path(__file__).parent.parent / 'data'
 EXPORTS_DIR = Path(__file__).parent.parent / 'exports'
 ANNOTATIONS_DIR = Path(__file__).parent / 'annotations'
 ANNOTATIONS_DIR.mkdir(exist_ok=True)
@@ -2110,7 +2111,9 @@ def api_embedding():
         }), 500
 
 if __name__ == '__main__':
+    print(f"🚀 Starting Annotator App...")
+    print(f"📂 Data directory: {DATA_DIR}")
     print(f"📁 Exports directory: {EXPORTS_DIR}")
     print(f"📝 Annotations directory: {ANNOTATIONS_DIR}")
     print(f"📊 Available files: {get_available_files()}")
-    app.run(debug=True, port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5001)
