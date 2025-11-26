@@ -1,10 +1,11 @@
-# getout-of-text-3: A Python Toolkit for Legal Text Analysis and Open Science
+# getout-of-text-3: A Python Toolkit for Legal Text Analysis and Open Science in Corpus Linguistics
 
-- Version: **0.4.10**
+- Version: **0.4.10** ([pypi.org/project/getout-of-text-3/](https://pypi.org/project/getout-of-text-3/))
+- License: [MIT License](LICENSE.md)
 - Authors: 
     - [Etienne P Jacquot](mailto:etiennej@upenn.edu) (`@atnjqt`)
     - [Matthew B O'Donnell](mailto:odmatt@upenn.edu) (`@mbod`)
-    
+
 ## Introduction
 
 The `getout_of_text3` module is a prototypical Python library promoting open and reproducible Computational Forensic Linguistics toolsets for legal scholars performing textual analysis with popular corpora such as:
@@ -18,19 +19,20 @@ The Python projects consists of two prototype component exploring use cases for 
 
 1. **Installable Library** named `getout_of_text3` which provides tools for local offline corpus management and querying local corpora text data.
 
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
+    pip install getout-of-text-3 -U
+    ```
+
 2. **Runnable web application** named `annotator app` which provides a user interface for annotation of concordance data and subsequent analysis using embedding models and large language models, along with traditional NLP techniques.
 
-
-### Installation
-
-You can install `getout_of_text3` using pip. I recommend setting up a virtual environment using [venv](https://docs.python.org/3/library/venv.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) to manage dependencies.
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
-pip install getout-of-text-3 -U
-```
-
+    ```bash
+    cd annotator_app/
+    python3 -m venv .venv
+    source .venv/bin/activate
+    python3 app.py
+    ```
 
 ## Table of Contents
 
