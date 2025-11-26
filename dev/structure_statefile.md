@@ -27,9 +27,9 @@ _Last updated: October 10, 2025_
     - `reports/`
   - `coca/`
   - `embedding/`
-  - `multi-lingual/`
   - `scotus/`
   - `topic_modeling/`
+  - `wikimedia/`
 - `getout_of_text_3/`
   - `__pycache__/`
 - `getout_of_text_3.egg-info/`
