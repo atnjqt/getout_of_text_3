@@ -26,6 +26,20 @@ The `getout_of_text3` module is a prototypical Python library promoting transpar
     source .venv/bin/activate
     python3 app.py
     ```
+    - or run with Docker
+
+    ```bash
+    cd annotator_app
+
+    docker build -t annotator_app:latest .
+
+    docker run -p 5001:5001 \
+    -v $(pwd)/data:/data \
+    -v $(pwd)/exports:/exports \
+    -v $(pwd)/annotator_app/annotations:/app/annotations \
+    -v ~/.aws:/root/.aws \
+    annotator_app:latest 
+    ```
 
 3. **Corpus folder** for offline text files saved in a local [data](./data/) directory:
     - **Enligh-Corpora**: 
