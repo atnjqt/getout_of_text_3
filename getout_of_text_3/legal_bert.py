@@ -4,6 +4,7 @@ Provides masked language modeling capabilities using Legal-BERT pipeline
 """
 
 import json
+import textwrap
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -26,9 +27,11 @@ def _get_pipeline(model_name: str = "nlpaueb/legal-bert-base-uncased"):
     return _pipe
 
 
-def pipe(statement: str, masked_token: Optional[str] = None, 
+def pipe(statement: str, 
+         masked_token: Optional[str] = None, 
          token_mask: str = '[MASK]', top_k: int = 5, 
-         visualize: bool = True, json_output: bool = False, model_name: str = "nlpaueb/legal-bert-base-uncased") -> List[Dict[str, Any]]:
+         visualize: bool = True, json_output: bool = False, 
+         model_name: str = "nlpaueb/legal-bert-base-uncased") -> List[Dict[str, Any]]:
     """
     Legal-BERT pipeline for masked language modeling
     
@@ -100,9 +103,9 @@ def _visualize_predictions(results: List[Dict], statement: str,
     tokens = [result['token_str'] for result in results]
     scores = [result['score'] for result in results]
     
-    # Create DataFrame and sort by score descending
+    # Create DataFrame and sort by score ascending for display (highest at top)
     df = pd.DataFrame({'token': tokens, 'score': scores})
-    df = df.sort_values('score', ascending=False)
+    df = df.sort_values('score', ascending=True)
     
     # Set modern style
     sns.set_palette("viridis")
@@ -117,14 +120,22 @@ def _visualize_predictions(results: List[Dict], statement: str,
     plt.ylabel('Predicted Tokens', fontsize=11)
     plt.title('Legal-BERT Masked Token Predictions', fontsize=12, fontweight='bold', pad=15)
     
-    # Add subtitle with the statement
+    # Set x-axis limits to add padding for score labels
+    max_score = df['score'].max()
+    plt.xlim(0, max_score * 1.15)  # Add 15% padding on the right
+    
+    # Add subtitle with the statement (wrapped to fit width)
     if masked_token:
         display_statement = statement.replace(token_mask, f' [{masked_token}] ')
     else:
         display_statement = statement
+    
+    # Wrap text to approximately 100 characters per line
+    wrapped_statement = '\n'.join(textwrap.wrap(display_statement, width=100))
         
-    plt.suptitle(f"Statement: {display_statement}", 
-                fontsize=10, fontweight='bold', y=-0.05, color='blue')
+    plt.suptitle(f"Statement: {wrapped_statement}", 
+                fontsize=10, fontweight='bold', y=-0.05 - (wrapped_statement.count('\n') * 0.02), 
+                color='blue')
     
     # Add score labels on the bars
     for i, (token, score) in enumerate(zip(df['token'], df['score'])):
