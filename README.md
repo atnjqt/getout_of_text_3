@@ -8,16 +8,9 @@
 
 ## Introduction
 
-The `getout_of_text3` module is a prototypical Python library promoting open and reproducible Computational Forensic Linguistics toolsets for legal scholars performing textual analysis with popular corpora such as:
-- **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), 
-- **Sketch-Engine** public corpus examples
-- **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora by providing simpler toolsets to promote the discovery of the *'ordinary meaning'* of words using NLP, Embedding Models, and AI Agentic LLMs.
+The `getout_of_text3` module is a prototypical Python library promoting transparent and reproducible legal Corpus Linguistics research by leveraging traditional NLP tools alongside AI implementions using embedding models and large language models. The projects consists of two prototypical components for querying and analyzing corpus query data:
 
-## Overview
-
-The Python projects consists of two prototype component exploring use cases for legal Corpus Linguistics using Computational Forensic Linguistics techniques:
-
-1. **Installable Library** named `getout_of_text3` which provides tools for local offline corpus management and querying local corpora text data.
+1. **Installable library** named `getout_of_text3` which provides tools for local offline corpus management and querying local corpora text data.
 
     ```bash
     python3 -m venv .venv
@@ -33,6 +26,15 @@ The Python projects consists of two prototype component exploring use cases for 
     source .venv/bin/activate
     python3 app.py
     ```
+
+3. **Corpus folder** for offline text files saved in a local [data](./data/) directory:
+    - **Enligh-Corpora**: 
+        - `data/english-corpora/coca` for [Corpus of Contemporary American English](https://www.english-corpora.org/coca/)
+        - `data/english-corpora/glowbe` for [Corpus of Global Web-Based English](https://www.english-corpora.org/glowbe)
+    - **Sketch-Engine**: 
+        - `data/sketch-engine/eec` for [EcoLexicon English Corpus](https://www.sketchengine.eu/ecolexicon-corpus/)
+    - **DIY Corpus Collections**:
+        - `data/loc.gov/scotus` for [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/)
 
 ## Table of Contents
 
