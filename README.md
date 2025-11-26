@@ -1,10 +1,25 @@
 # getout-of-text-3: A Python Toolkit for Legal Text Analysis and Open Science
 
-- Author: Etienne P Jacquot (`@atnjqt`)
-
+- Version: **0.4.10**
+- Authors: 
+    - [Etienne P Jacquot](mailto:etiennej@upenn.edu) (`@atnjqt`)
+    - [Matthew B O'Donnell](mailto:odmatt@upenn.edu) (`@mbod`)
+    
 ## Introduction
 
-The `getout_of_text3` module is a comprehensive Python library promoting open and reproducible computational forensic linguistics toolsets for data scientists and legal scholars performing textual analysis with popular corpora such as **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora by providing simpler toolsets to promote the discovery of the *'ordinary meaning'* of words using NLP, Embedding Models, and AI Agentic LLMs.
+The `getout_of_text3` module is a prototypical Python library promoting open and reproducible Computational Forensic Linguistics toolsets for legal scholars performing textual analysis with popular corpora such as:
+- **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), 
+- **Sketch-Engine** public corpus examples
+- **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora by providing simpler toolsets to promote the discovery of the *'ordinary meaning'* of words using NLP, Embedding Models, and AI Agentic LLMs.
+
+## Overview
+
+The Python projects consists of two prototype component exploring use cases for legal Corpus Linguistics using Computational Forensic Linguistics techniques:
+
+1. **Installable Library** named `getout_of_text3` which provides tools for local offline corpus management and querying local corpora text data.
+
+2. **Runnable web application** named `annotator app` which provides a user interface for annotation of concordance data and subsequent analysis using embedding models and large language models, along with traditional NLP techniques.
+
 
 ### Installation
 
