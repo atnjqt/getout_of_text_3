@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KWIC Annotation Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f7;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        header {
+            border-bottom: 2px solid #e5e5e7;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        h1 {
+            color: #1d1d1f;
+            font-size: 2.5em;
+            flex: 1 1 100%;
+        }
+        
+        .subtitle {
+            color: #6e6e73;
+            font-size: 1.1em;
+            flex: 1 1 100%;
+            margin-top: -10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .nav-link {
+            padding: 8px 16px;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .nav-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-link.home { background: #0071e3; }
+        .nav-link.home:hover { background: #0077ed; }
+        
+        .nav-link.display { background: #34c759; }
+        .nav-link.display:hover { background: #30d158; }
+        
+        .nav-link.morphology { background: #ff9500; }
+        .nav-link.morphology:hover { background: #ff9f0a; }
+        
+        .nav-link.pos { background: #ff6b6b; }
+        .nav-link.pos:hover { background: #ff7979; }
+        
+        .nav-link.subject { background: #5856d6; }
+        .nav-link.subject:hover { background: #5e5ce6; }
+        
+        .nav-link.ngrams { background: #ff3b30; }
+        .nav-link.ngrams:hover { background: #ff453a; }
+        
+        .nav-link.clustering { background: #00c7be; }
+        .nav-link.clustering:hover { background: #32d4cd; }
+        
+        .nav-link.frequencies { background: #af52de; }
+        .nav-link.frequencies:hover { background: #bf5af2; }
+        
+        .nav-link.analysis { background: #8e44ad; }
+        .nav-link.analysis:hover { background: #9b59b6; }
+        
+        .nav-link.ai-summary { background: #667eea; }
+        .nav-link.ai-summary:hover { background: #764ba2; }
+        
+        .nav-link.embedding { background: #17a2b8; }
+        .nav-link.embedding:hover { background: #138496; }
+        
+        .nav-link.settings { background: #6c757d; }
+        .nav-link.settings:hover { background: #5a6268; }
+        
+        .card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e5e5e7;
+        }
+        
+        .card h2 {
+            color: #1d1d1f;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            background: white;
+            font-family: inherit;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #0071e3;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: #0071e3;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #0077ed;
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary:disabled {
+            background: #d2d2d7;
+            cursor: not-allowed;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e5e7;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>KWIC Annotation Tool</h1>
+                <p class="subtitle">Corpus linguistics analysis and annotation</p>
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-link home">🏠 Annotator</a>
+                <a href="/display" class="nav-link display">📋 Concordance</a>
+                <a href="/ai-summary" class="nav-link ai-summary">🤖 AI Summary</a>
+                <a href="/semantic-embedding" class="nav-link embedding">🧠 Embedding</a>
+                <a href="/morphology" class="nav-link morphology">🔬 Morphology</a>
+                <a href="/part-of-speech" class="nav-link pos">🏷️ POS</a>
+                <!-- <a href="/subject_analysis" class="nav-link subject">📊 Subject</a> -->
+                <a href="/n-grams" class="nav-link ngrams">📝 N-grams</a>
+                <a href="/clustering" class="nav-link clustering">🔍 Clustering</a>
+                <a href="/frequencies" class="nav-link frequencies">📈 Frequencies</a>
+                <a href="/analysis" class="nav-link analysis">📊 Analysis</a>
+                <a href="/settings" class="nav-link settings">⚙️ Settings</a>
+            </nav>
+        </header>

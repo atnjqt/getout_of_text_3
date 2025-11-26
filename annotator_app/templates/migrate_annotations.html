@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migrate Annotations - KWIC Annotator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .container-custom {
+            max-width: 1000px;
+        }
+        .card {
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .file-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-item.migrated {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .file-item.error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .btn-migrate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .btn-migrate:hover {
+            opacity: 0.9;
+        }
+        .btn-migrate:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .stats-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: white;
+            border-radius: 15px;
+            margin-left: 10px;
+            font-size: 0.85em;
+        }
+        .alert-info {
+            background: #cfe2ff;
+            border-left: 4px solid #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container container-custom">
+        <!-- Navigation -->
+        <div class="mb-3">
+            <a href="/" class="btn btn-light">
+                <i class="fas fa-arrow-left"></i> Back to Annotator
+            </a>
+        </div>
+
+        <!-- Main Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">
+                    <i class="fas fa-database"></i> Migrate Annotation Files
+                </h2>
+                <p class="mb-0 mt-2" style="opacity: 0.9;">
+                    Add KWIC context data to existing annotation files
+                </p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>What does this do?</strong><br>
+                    This migration adds <code>text_id</code>, <code>match</code>, <code>context</code>, and <code>full_text</code> 
+                    fields to your existing annotation files by pulling the data from the original KWIC files. 
+                    Files that already have this data will be skipped.
+                </div>
+
+                {% if files %}
+                    <div class="mb-3">
+                        <button class="btn btn-primary" id="migrateAllBtn">
+                            <i class="fas fa-sync-alt"></i> Migrate All Files
+                        </button>
+                        <span class="ms-2 text-muted" id="progressText"></span>
+                    </div>
+
+                    <div id="fileList">
+                        {% for file in files %}
+                        <div class="file-item" data-filename="{{ file }}" id="file-{{ loop.index0 }}">
+                            <div>
+                                <i class="fas fa-file"></i>
+                                <strong>{{ file }}</strong>
+                                <span class="status-message"></span>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-migrate" onclick="migrateFile('{{ file }}', {{ loop.index0 }})">
+                                    <i class="fas fa-sync-alt"></i> Migrate
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No annotation files found to migrate.
+                    </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <h5>Migration Summary</h5>
+                    <ul id="summaryList">
+                        <li>Total files: <strong id="totalFiles">{{ files|length }}</strong></li>
+                        <li>Migrated: <strong id="migratedCount">0</strong></li>
+                        <li>Errors: <strong id="errorCount">0</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let migratedCount = 0;
+        let errorCount = 0;
+
+        async function migrateFile(filename, index) {
+            const fileElement = document.getElementById(`file-${index}`);
+            const button = fileElement.querySelector('button');
+            const statusMessage = fileElement.querySelector('.status-message');
+            
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Migrating...';
+            statusMessage.innerHTML = '';
+            fileElement.classList.remove('migrated', 'error');
+
+            try {
+                const response = await fetch(`/api/migrate_annotation/${filename}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    fileElement.classList.add('migrated');
+                    button.innerHTML = '<i class="fas fa-check"></i> Migrated';
+                    button.disabled = true;
+                    
+                    statusMessage.innerHTML = `
+                        <span class="stats-badge">
+                            <i class="fas fa-check-circle text-success"></i> 
+                            Updated: ${data.updated} | Skipped: ${data.skipped}
+                        </span>
+                    `;
+                    
+                    migratedCount++;
+                    document.getElementById('migratedCount').textContent = migratedCount;
+                } else {
+                    throw new Error(data.error || 'Migration failed');
+                }
+            } catch (error) {
+                fileElement.classList.add('error');
+                button.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+                button.disabled = false;
+                
+                statusMessage.innerHTML = `
+                    <span class="stats-badge" style="background: #f8d7da;">
+                        <i class="fas fa-exclamation-circle text-danger"></i> 
+                        ${error.message}
+                    </span>
+                `;
+                
+                errorCount++;
+                document.getElementById('errorCount').textContent = errorCount;
+            }
+        }
+
+        document.getElementById('migrateAllBtn')?.addEventListener('click', async function() {
+            const files = document.querySelectorAll('.file-item');
+            const progressText = document.getElementById('progressText');
+            const button = this;
+            
+            button.disabled = true;
+            migratedCount = 0;
+            errorCount = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                const filename = files[i].getAttribute('data-filename');
+                progressText.textContent = `Processing ${i + 1} of ${files.length}...`;
+                
+                await migrateFile(filename, i);
+                
+                // Small delay between requests
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            progressText.textContent = 'Migration complete!';
+            button.disabled = false;
+        });
+    </script>
+
+{% include 'footer.html' %}

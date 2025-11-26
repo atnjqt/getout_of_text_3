@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analysis</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .result-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .reasoning-container {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .metadata-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #e9ecef;
+            border-radius: 15px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+{% include 'header.html' %}
+<div class="container mt-4">
+    <h1>🤖 AI-Powered KWIC Analysis</h1>
+    <p class="text-muted">Generate forensic linguistics analysis using AWS Bedrock AI</p>
+    
+    <form id="aiAnalysisForm" class="mb-3">
+        <div class="mb-2">
+            <label for="fileSelect" class="form-label">Select Data File</label>
+            <select class="form-control" id="fileSelect" required>
+                <option value="">-- Select a file --</option>
+                <optgroup label="KWIC Files">
+                    {% for file in kwic_files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Annotation Files">
+                    {% for file in annotation_files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label for="corpusFullname" class="form-label">Corpus Full Name</label>
+            <select class="form-control" id="corpusFullname" required>
+                <option value="">-- Select corpus --</option>
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label for="corpusShortname" class="form-label">Corpus Friendly Name</label>
+            <select class="form-control" id="corpusShortname" required>
+                <option value="">-- Select corpus --</option>
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label for="keyword" class="form-label">Keyword/Phrase</label>
+            <input type="text" class="form-control" id="keyword" 
+                   placeholder="e.g., best system" required>
+        </div>
+
+        <div class="mb-2">
+            <label for="randomSample" class="form-label">Random Sample Size</label>
+            <input type="number" class="form-control" id="randomSample" 
+                   value="50" min="1" max="500">
+        </div>
+
+        <div class="mb-2">
+            <label for="reasoningLevel" class="form-label">Reasoning Level</label>
+            <select class="form-control" id="reasoningLevel">
+                <option value="low">Low - Basic analysis</option>
+                <option value="medium">Medium - Moderate detail</option>
+                <option value="high" selected>High - Detailed analysis</option>
+            </select>
+        </div>
+
+        <div class="mb-2">
+            <label for="temperature" class="form-label">Model Temperature: <span id="temperatureValue">0.0</span></label>
+            <input type="range" class="form-range" id="temperature" 
+                   min="0" max="1" step="0.1" value="0">
+        </div>
+
+        <div class="mb-2">
+            <label for="awsProfile" class="form-label">AWS Profile Name</label>
+            <input type="text" class="form-control" id="awsProfile" 
+                   value="atn-developer" placeholder="default">
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="removeAnnotations" checked>
+            <label class="form-check-label" for="removeAnnotations">
+                Remove existing classifications and notes (fresh analysis)
+            </label>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <button type="submit" class="btn btn-primary" id="analyzeBtn">
+                <i class="fas fa-play"></i> Run AI Analysis
+            </button>
+            <div id="timerDisplay" style="display: none; font-size: 1.2rem; font-weight: bold; color: #0071e3;">
+                <i class="fas fa-stopwatch"></i> <span id="timerValue">00:00</span>
+            </div>
+        </div>
+    </form>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" style="display: none; text-align: center; padding: 40px;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">AI is analyzing your data... This may take a minute.</p>
+    </div>
+
+    <!-- Results Container -->
+    <div id="resultsContainer" style="display: none;">
+        <hr class="my-4">
+        
+        <!-- Metadata -->
+        <div id="metadataContainer" class="mb-3"></div>
+
+        <!-- Export Buttons -->
+        <div class="mb-3">
+            <button class="btn btn-success btn-sm" id="exportMarkdownBtn">
+                <i class="fas fa-file-markdown"></i> Export Markdown
+            </button>
+            <button class="btn btn-info btn-sm" id="exportHtmlBtn">
+                <i class="fas fa-file-code"></i> Export HTML
+            </button>
+        </div>
+
+        <!-- Reasoning Content (if available) -->
+        <div id="reasoningContainer"></div>
+
+        <!-- Analysis Result -->
+        <div class="result-container">
+            <div id="analysisResult"></div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    let currentResult = null;
+    let currentMetadata = null;
+    let corporaSettings = [];
+
+    // Load settings on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const response = await fetch('/api/settings');
+            const data = await response.json();
+            
+            if (data.success && data.settings.corpora) {
+                corporaSettings = data.settings.corpora;
+                populateCorpusDropdowns();
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    });
+
+    // Populate corpus dropdowns
+    function populateCorpusDropdowns() {
+        const fullnameSelect = document.getElementById('corpusFullname');
+        const shortnameSelect = document.getElementById('corpusShortname');
+        
+        // Clear existing options except first
+        fullnameSelect.innerHTML = '<option value="">-- Select corpus --</option>';
+        shortnameSelect.innerHTML = '<option value="">-- Select corpus --</option>';
+        
+        corporaSettings.forEach((corpus, index) => {
+            const fullnameOption = document.createElement('option');
+            fullnameOption.value = corpus.full_name;
+            fullnameOption.textContent = corpus.full_name;
+            fullnameOption.dataset.index = index;
+            fullnameSelect.appendChild(fullnameOption);
+            
+            const shortnameOption = document.createElement('option');
+            shortnameOption.value = corpus.friendly_name;
+            shortnameOption.textContent = corpus.friendly_name;
+            shortnameOption.dataset.index = index;
+            shortnameSelect.appendChild(shortnameOption);
+        });
+    }
+
+    // Sync dropdowns when one changes
+    document.getElementById('corpusFullname').addEventListener('change', function() {
+        const selectedIndex = this.options[this.selectedIndex]?.dataset.index;
+        if (selectedIndex !== undefined) {
+            const shortnameSelect = document.getElementById('corpusShortname');
+            shortnameSelect.selectedIndex = parseInt(selectedIndex) + 1; // +1 for placeholder
+        }
+    });
+
+    document.getElementById('corpusShortname').addEventListener('change', function() {
+        const selectedIndex = this.options[this.selectedIndex]?.dataset.index;
+        if (selectedIndex !== undefined) {
+            const fullnameSelect = document.getElementById('corpusFullname');
+            fullnameSelect.selectedIndex = parseInt(selectedIndex) + 1; // +1 for placeholder
+        }
+    });
+
+    // Update temperature display value
+    document.getElementById('temperature').addEventListener('input', function() {
+        document.getElementById('temperatureValue').textContent = this.value;
+    });
+
+    // Auto-fill fields based on selected file
+    document.getElementById('fileSelect').addEventListener('change', function() {
+        const filename = this.value;
+        if (!filename) return;
+
+        // Try to parse filename for metadata
+        const parts = filename.replace('.json', '').replace('_annotations', '').split('_');
+        
+        // Try to extract keyword and corpus
+        if (filename.startsWith('kwic_')) {
+            const keyword = parts.slice(1, -1).join(' ');
+            const corpus = parts[parts.length - 1];
+            
+            document.getElementById('keyword').value = keyword || '';
+            
+            // Try to match corpus from settings
+            const matchedCorpus = corporaSettings.find(c => 
+                c.friendly_name.toLowerCase() === corpus.toLowerCase() ||
+                c.relative_filepath.toLowerCase().includes(corpus.toLowerCase())
+            );
+            
+            if (matchedCorpus) {
+                const index = corporaSettings.indexOf(matchedCorpus);
+                document.getElementById('corpusFullname').selectedIndex = index + 1; // +1 for placeholder
+                document.getElementById('corpusShortname').selectedIndex = index + 1;
+            }
+        }
+    });
+
+    let timerInterval = null;
+    let startTime = null;
+
+    function startTimer() {
+        startTime = Date.now();
+        document.getElementById('timerDisplay').style.display = 'inline-block';
+        timerInterval = setInterval(updateTimer, 100);
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function updateTimer() {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        document.getElementById('timerValue').textContent = 
+            `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    document.getElementById('aiAnalysisForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = {
+            filename: document.getElementById('fileSelect').value,
+            reasoning_level: document.getElementById('reasoningLevel').value,
+            corpus_fullname: document.getElementById('corpusFullname').value,
+            corpus_shortname: document.getElementById('corpusShortname').value,
+            keyword: document.getElementById('keyword').value,
+            random_sample: parseInt(document.getElementById('randomSample').value),
+            temperature: parseFloat(document.getElementById('temperature').value),
+            aws_profile: document.getElementById('awsProfile').value || 'default',
+            remove_annotations: document.getElementById('removeAnnotations').checked
+        };
+
+        // Show loading, hide results, start timer
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('resultsContainer').style.display = 'none';
+        document.getElementById('analyzeBtn').disabled = true;
+        startTimer();
+
+        try {
+            const response = await fetch('/api/ai_summary', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                currentResult = data.result;
+                currentMetadata = data.metadata;
+
+                // Calculate elapsed time
+                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+                const remainingSeconds = elapsedSeconds % 60;
+                const elapsedTime = `${String(elapsedMinutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+
+                // Display metadata
+                const metadataHtml = `
+                    <span class="metadata-badge"><i class="fas fa-file"></i> ${data.metadata.filename}</span>
+                    <span class="metadata-badge"><i class="fas fa-search"></i> ${data.metadata.keyword}</span>
+                    <span class="metadata-badge"><i class="fas fa-book"></i> ${data.metadata.corpus}</span>
+                    <span class="metadata-badge"><i class="fas fa-brain"></i> ${data.metadata.reasoning_level}</span>
+                    <span class="metadata-badge"><i class="fas fa-random"></i> Sample: ${data.metadata.sample_size}</span>
+                    <span class="metadata-badge"><i class="fas fa-thermometer-half"></i> Temp: ${data.metadata.temperature}</span>
+                    <span class="metadata-badge"><i class="fas fa-robot"></i> ${data.metadata.model}</span>
+                    <span class="metadata-badge"><i class="fas fa-clock"></i> Time: ${elapsedTime}</span>
+                `;
+                document.getElementById('metadataContainer').innerHTML = metadataHtml;
+
+                // Display reasoning if available
+                if (data.reasoning) {
+                    document.getElementById('reasoningContainer').innerHTML = `
+                        <div class="reasoning-container">
+                            <h5><i class="fas fa-lightbulb"></i> AI Reasoning Process</h5>
+                            <pre style="white-space: pre-wrap; font-family: monospace; font-size: 0.85em;">${data.reasoning}</pre>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('reasoningContainer').innerHTML = '';
+                }
+
+                // Render markdown
+                document.getElementById('analysisResult').innerHTML = marked.parse(data.result);
+
+                // Show results
+                document.getElementById('resultsContainer').style.display = 'block';
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error occurred'));
+            }
+        } catch (error) {
+            alert('Network error: ' + error.message);
+        } finally {
+            stopTimer();
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = false;
+        }
+    });
+
+    // Export as Markdown
+    document.getElementById('exportMarkdownBtn').addEventListener('click', function() {
+        if (!currentResult || !currentMetadata) return;
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `ai_analysis_${currentMetadata.corpus_shortname}_${currentMetadata.keyword.replace(/\s+/g, '_')}_${timestamp}.md`;
+
+        const content = `# AI Analysis Report: ${currentMetadata.keyword}
+
+**Corpus:** ${currentMetadata.corpus}
+**Reasoning Level:** ${currentMetadata.reasoning_level}
+**Sample Size:** ${currentMetadata.sample_size}
+**Temperature:** ${currentMetadata.temperature}
+**Model:** ${currentMetadata.model}
+**Generated:** ${new Date().toLocaleString()}
+
+---
+
+${currentResult}
+`;
+
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // Export as HTML
+    document.getElementById('exportHtmlBtn').addEventListener('click', function() {
+        if (!currentResult || !currentMetadata) return;
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `ai_analysis_${currentMetadata.corpus_shortname}_${currentMetadata.keyword.replace(/\s+/g, '_')}_${timestamp}.html`;
+
+        const content = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Analysis Report: ${currentMetadata.keyword}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+               max-width: 1200px; margin: 40px auto; padding: 0 20px; line-height: 1.6; }
+        h1, h2, h3 { color: #333; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th { background: #0d6efd; color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        tr:hover { background: #f5f5f5; }
+        .metadata { background: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="metadata">
+        <h1>AI Analysis Report: ${currentMetadata.keyword}</h1>
+        <p><strong>Corpus:</strong> ${currentMetadata.corpus}</p>
+        <p><strong>Reasoning Level:</strong> ${currentMetadata.reasoning_level}</p>
+        <p><strong>Sample Size:</strong> ${currentMetadata.sample_size}</p>
+        <p><strong>Temperature:</strong> ${currentMetadata.temperature}</p>
+        <p><strong>Model:</strong> ${currentMetadata.model}</p>
+        <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+    </div>
+    ${marked.parse(currentResult)}
+</body>
+</html>`;
+
+        const blob = new Blob([content], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+</script>
+
+{% include 'footer.html' %}

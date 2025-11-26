@@ -1,0 +1,1108 @@
+{% include 'header.html' %}
+
+<style>
+        .source-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f7;
+            border-radius: 8px;
+        }
+        
+        .source-btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: 2px solid #d2d2d7;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.2s;
+            color: #1d1d1f;
+        }
+        
+        .source-btn:hover {
+            border-color: #0071e3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .source-btn.active {
+            background: #0071e3;
+            color: white;
+            border-color: #0071e3;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        select, input {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        select {
+            min-width: 300px;
+            cursor: pointer;
+        }
+        
+        .rows-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .rows-control label {
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .rows-control input {
+            width: 80px;
+        }
+        
+        .info-bar {
+            padding: 15px 20px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .info-text {
+            color: #1976d2;
+            font-weight: 600;
+        }
+        
+        .concordance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.95em;
+            background: white;
+            border: 2px solid #e5e5e7;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .concordance-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .concordance-table th {
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        
+        .concordance-table th:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .concordance-table th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+        
+        .concordance-table th.sorted-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+        
+        .concordance-table th.sorted-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+        
+        .concordance-table tbody tr {
+            border-bottom: 1px solid #e5e5e7;
+            transition: background 0.2s;
+        }
+        
+        .concordance-table tbody tr:hover {
+            background: #f5f9ff;
+        }
+        
+        .concordance-table tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+        
+        .concordance-table tbody tr:nth-child(even):hover {
+            background: #f5f9ff;
+        }
+        
+        .concordance-table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+        
+        .left-context {
+            text-align: right;
+            color: #1d1d1f;
+            width: 38%;
+            max-width: 400px;
+            padding-right: 20px;
+            direction: rtl;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .left-context-inner {
+            direction: ltr;
+            unicode-bidi: plaintext;
+        }
+        
+        .keyword {
+            text-align: center;
+            font-weight: 700;
+            color: #0071e3;
+            background: #e3f2fd;
+            padding: 8px 15px !important;
+            white-space: nowrap;
+            width: 12%;
+            font-size: 1.05em;
+        }
+        
+        .right-context {
+            text-align: left;
+            color: #1d1d1f;
+            width: 38%;
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding-left: 20px;
+        }
+        
+        .meta-column {
+            width: 12%;
+            text-align: center;
+        }
+        
+        .concordance-text {
+            font-size: 1em;
+            line-height: 1.7;
+            color: #1d1d1f;
+        }
+        
+        .concordance-text .keyword {
+            font-weight: 700;
+            color: #0071e3;
+            background: #e3f2fd;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .meta-column {
+            width: 200px;
+            text-align: left;
+        }
+        
+        .meta-info {
+            text-align: center;
+            color: #6e6e73;
+            font-size: 0.85em;
+            width: 10%;
+        }
+        
+        .classification-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+        
+        .classification-badge.literal {
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+        }
+        
+        .classification-badge.figurative {
+            background: rgba(240, 147, 251, 0.2);
+            color: #f5576c;
+        }
+        
+        .classification-badge.neither {
+            background: rgba(79, 172, 254, 0.2);
+            color: #4facfe;
+        }
+        
+        .classification-badge.unclear {
+            background: rgba(67, 233, 123, 0.2);
+            color: #43e97b;
+        }
+        
+        .genre-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #f5f5f7;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6e6e73;
+            font-size: 1.1em;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6e6e73;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+            align-items: center;
+        }
+        
+        .pagination button {
+            padding: 10px 20px;
+            background: #0071e3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background: #0077ed;
+            transform: translateY(-1px);
+        }
+        
+        .pagination button:disabled {
+            background: #d2d2d7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .pagination .page-info {
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .annotation-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: #f5f5f7;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .annotation-toggle label {
+            font-weight: 600;
+            color: #1d1d1f;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .annotation-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .annotation-controls {
+            padding: 10px;
+            background: #f8f9fa;
+            border-top: 2px solid #e5e5e7;
+        }
+        
+        .annotation-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            justify-content: center;
+        }
+        
+        .annotation-btn {
+            padding: 8px 16px;
+            border: 2px solid #d2d2d7;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        
+        .annotation-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .annotation-btn.selected {
+            color: white;
+            border-color: transparent;
+        }
+        
+        .annotation-btn.literal {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .annotation-btn.literal.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .annotation-btn.figurative {
+            border-color: #f5576c;
+            color: #f5576c;
+        }
+        
+        .annotation-btn.figurative.selected {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .annotation-btn.neither {
+            border-color: #4facfe;
+            color: #4facfe;
+        }
+        
+        .annotation-btn.neither.selected {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .annotation-btn.unclear {
+            border-color: #43e97b;
+            color: #43e97b;
+        }
+        
+        .annotation-btn.unclear.selected {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .annotation-notes {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            resize: vertical;
+            min-height: 40px;
+        }
+        
+        .annotation-notes:focus {
+            outline: none;
+            border-color: #0071e3;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+        }
+        
+        .save-status {
+            text-align: center;
+            font-size: 0.85em;
+            margin-top: 5px;
+            min-height: 20px;
+        }
+        
+        .save-status.success {
+            color: #43e97b;
+        }
+        
+        .save-status.error {
+            color: #f5576c;
+        }
+        
+        .random-sample-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .random-sample-control label {
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .random-sample-control input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .random-sample-control input[type="number"] {
+            width: 100px;
+        }
+        
+        .random-sample-btn {
+            padding: 8px 16px;
+            background: #0071e3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .random-sample-btn:hover {
+            background: #0077ed;
+            transform: translateY(-1px);
+        }
+        
+        .random-sample-btn:disabled {
+            background: #d2d2d7;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Concordance Display</h1>
+        
+        <div class="source-selector">
+            <button class="source-btn active" id="rawBtn" onclick="selectSource('raw')">
+                📄 Raw KWIC Data
+            </button>
+            <button class="source-btn" id="annotatedBtn" onclick="selectSource('annotated')">
+                ✅ Annotated Data
+            </button>
+        </div>
+        
+        <div class="annotation-toggle" id="annotationToggleContainer">
+            <input type="checkbox" id="annotationToggle">
+            <label for="annotationToggle">✏️ Enable In-Line Annotation?</label>
+        </div>
+        
+        <div class="controls">
+            <select id="fileSelect" style="display: none;">
+                <option value="">Select a file...</option>
+            </select>
+            
+            <select id="kwicFileSelect">
+                <option value="">Select a KWIC file...</option>
+                {% for file in kwic_files %}
+                <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+            
+            <select id="annotationFileSelect" style="display: none;">
+                <option value="">Select an annotation file...</option>
+                {% for file in annotation_files %}
+                <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+            
+            <div class="rows-control">
+                <label for="rowsInput">Rows per page:</label>
+                <input type="number" id="rowsInput" value="30" min="10" max="100" step="10">
+            </div>
+            
+            <div class="rows-control" id="classificationFilter" style="display: none;">
+                <label for="classificationSelect">Filter by classification:</label>
+                <select id="classificationSelect">
+                    <option value="">All Classifications</option>
+                    <option value="literal">Literal</option>
+                    <option value="figurative">Figurative</option>
+                    <option value="neither">Neither</option>
+                    <option value="unclear">Unclear</option>
+                </select>
+            </div>
+            
+            <div class="random-sample-control">
+                <input type="checkbox" id="randomSampleToggle">
+                <label for="randomSampleToggle">Random Sample</label>
+                <input type="number" id="sampleSize" value="50" min="1" max="1000" step="10" disabled>
+                <button class="random-sample-btn" id="applySampleBtn" disabled>Apply Sample</button>
+            </div>
+        </div>
+        
+        <div id="infoBar" style="display: none;"></div>
+        
+        <div id="content">
+            <div class="no-data">
+                👆 Select a file to display concordance lines
+            </div>
+        </div>
+        
+        <div id="pagination" style="display: none;"></div>
+    </div>
+    
+    <script>
+        let allLines = [];
+        let filteredLines = [];
+        let currentPage = 0;
+        let rowsPerPage = 30;
+        let currentSource = 'raw';
+        let sortColumn = null;
+        let sortDirection = 'asc';
+        let annotationEnabled = false;
+        let currentFilename = '';
+        let currentKwicData = {};
+        let currentAnnotations = {};
+        let randomSampleEnabled = false;
+        let unfilteredLines = []; // Store unfiltered lines for sampling
+        
+        const kwicFileSelect = document.getElementById('kwicFileSelect');
+        const annotationFileSelect = document.getElementById('annotationFileSelect');
+        const classificationSelect = document.getElementById('classificationSelect');
+        const classificationFilter = document.getElementById('classificationFilter');
+        const rowsInput = document.getElementById('rowsInput');
+        const content = document.getElementById('content');
+        const infoBar = document.getElementById('infoBar');
+        const paginationDiv = document.getElementById('pagination');
+        const annotationToggle = document.getElementById('annotationToggle');
+        const annotationToggleContainer = document.getElementById('annotationToggleContainer');
+        const randomSampleToggle = document.getElementById('randomSampleToggle');
+        const sampleSize = document.getElementById('sampleSize');
+        const applySampleBtn = document.getElementById('applySampleBtn');
+        
+        kwicFileSelect.addEventListener('change', loadConcordance);
+        annotationFileSelect.addEventListener('change', loadConcordance);
+        classificationSelect.addEventListener('change', applyClassificationFilter);
+        annotationToggle.addEventListener('change', () => {
+            annotationEnabled = annotationToggle.checked;
+            renderPage();
+        });
+        randomSampleToggle.addEventListener('change', () => {
+            randomSampleEnabled = randomSampleToggle.checked;
+            sampleSize.disabled = !randomSampleEnabled;
+            applySampleBtn.disabled = !randomSampleEnabled;
+            
+            if (!randomSampleEnabled) {
+                // Reset to full dataset
+                applyFilters();
+            }
+        });
+        applySampleBtn.addEventListener('click', applyRandomSample);
+        rowsInput.addEventListener('change', () => {
+            rowsPerPage = parseInt(rowsInput.value);
+            currentPage = 0;
+            renderPage();
+        });
+        
+        function selectSource(source) {
+            currentSource = source;
+            
+            // Update button states
+            document.getElementById('rawBtn').classList.toggle('active', source === 'raw');
+            document.getElementById('annotatedBtn').classList.toggle('active', source === 'annotated');
+            
+            // Show/hide appropriate dropdown
+            kwicFileSelect.style.display = source === 'raw' ? 'block' : 'none';
+            annotationFileSelect.style.display = source === 'annotated' ? 'block' : 'none';
+            
+            // Show/hide classification filter
+            classificationFilter.style.display = source === 'annotated' ? 'flex' : 'none';
+            classificationSelect.value = '';
+            
+            // Show/hide annotation toggle (only for raw mode)
+            annotationToggleContainer.style.display = source === 'raw' ? 'flex' : 'none';
+            annotationToggle.checked = false;
+            annotationEnabled = false;
+            
+            // Reset display
+            allLines = [];
+            filteredLines = [];
+            content.innerHTML = '<div class="no-data">👆 Select a file to display concordance lines</div>';
+            infoBar.style.display = 'none';
+            paginationDiv.style.display = 'none';
+            
+            // Reset selections
+            kwicFileSelect.value = '';
+            annotationFileSelect.value = '';
+        }
+        
+        function applyClassificationFilter() {
+            applyFilters();
+        }
+        
+        function applyFilters() {
+            const selectedClassification = classificationSelect.value;
+            
+            // Start with all lines or unfiltered lines
+            let linesToFilter = randomSampleEnabled && unfilteredLines.length > 0 ? unfilteredLines : [...allLines];
+            
+            // Apply classification filter if selected
+            if (selectedClassification) {
+                linesToFilter = linesToFilter.filter(line => line.classification === selectedClassification);
+            }
+            
+            // Store unfiltered result for potential sampling
+            unfilteredLines = linesToFilter;
+            filteredLines = [...linesToFilter];
+            
+            // Reapply sort if active
+            if (sortColumn) {
+                sortLines(sortColumn, sortDirection);
+            }
+            
+            currentPage = 0;
+            renderPage();
+        }
+        
+        function applyRandomSample() {
+            if (!randomSampleEnabled) return;
+            
+            const size = parseInt(sampleSize.value);
+            if (isNaN(size) || size <= 0) {
+                alert('Please enter a valid sample size');
+                return;
+            }
+            
+            // Use unfilteredLines as the source (respects classification filter)
+            const sourceLines = unfilteredLines.length > 0 ? unfilteredLines : allLines;
+            
+            if (size >= sourceLines.length) {
+                filteredLines = [...sourceLines];
+            } else {
+                // Fisher-Yates shuffle and take first N items
+                const shuffled = [...sourceLines];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                filteredLines = shuffled.slice(0, size);
+            }
+            
+            // Reapply sort if active
+            if (sortColumn) {
+                sortLines(sortColumn, sortDirection);
+            }
+            
+            currentPage = 0;
+            renderPage();
+        }
+        
+        function sortLines(column, direction) {
+            filteredLines.sort((a, b) => {
+                let valA = a[column] || '';
+                let valB = b[column] || '';
+                
+                // Convert to lowercase for case-insensitive sorting
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                
+                if (valA < valB) return direction === 'asc' ? -1 : 1;
+                if (valA > valB) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        
+        function handleSort(column) {
+            if (sortColumn === column) {
+                // Toggle direction
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New column
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            
+            sortLines(sortColumn, sortDirection);
+            currentPage = 0;
+            renderPage();
+        }
+        
+        async function loadConcordance() {
+            const filename = currentSource === 'raw' ? kwicFileSelect.value : annotationFileSelect.value;
+            if (!filename) return;
+            
+            currentFilename = filename;
+            
+            content.innerHTML = '<div class="loading">⏳ Loading concordance lines...</div>';
+            infoBar.style.display = 'none';
+            paginationDiv.style.display = 'none';
+            
+            try {
+                if (currentSource === 'raw') {
+                    // Load KWIC data for annotation
+                    const kwicResponse = await fetch(`/api/load/${filename}`);
+                    const kwicResult = await kwicResponse.json();
+                    
+                    if (kwicResult.error) {
+                        content.innerHTML = `<div class="no-data">❌ Error: ${kwicResult.error}</div>`;
+                        return;
+                    }
+                    
+                    currentKwicData = kwicResult.data;
+                    currentAnnotations = kwicResult.annotations || {};
+                    
+                    // Flatten KWIC data with genre/index tracking
+                    allLines = [];
+                    for (const [genre_key, items] of Object.entries(currentKwicData)) {
+                        items.forEach((item, idx) => {
+                            let left_context = '';
+                            let keyword = item.match || '';
+                            let right_context = '';
+                            
+                            // Check if item has pre-split left/right fields
+                            if ('left' in item && 'right' in item) {
+                                left_context = item.left || '';
+                                keyword = item.match || item.keyword || '';
+                                right_context = item.right || '';
+                            } else {
+                                const context = item.context || '';
+                                const parts = context.split('**');
+                                
+                                if (parts.length >= 3) {
+                                    left_context = parts[0].trim();
+                                    keyword = parts[1].trim();
+                                    right_context = parts[2].trim();
+                                } else {
+                                    // Try to find match keyword in context
+                                    const match = item.match || '';
+                                    if (match && context.includes(match)) {
+                                        const matchPos = context.indexOf(match);
+                                        left_context = context.substring(0, matchPos).trim();
+                                        right_context = context.substring(matchPos + match.length).trim();
+                                    } else {
+                                        right_context = context;
+                                    }
+                                }
+                            }
+                            
+                            const annotation = currentAnnotations[genre_key]?.[idx] || {};
+                            
+                            allLines.push({
+                                genre: genre_key,
+                                index: idx,
+                                text_id: item.text_id || '',
+                                left: left_context,
+                                keyword: keyword,
+                                right: right_context,
+                                full_text: item.full_text || '',
+                                classification: annotation.classification || null,
+                                notes: annotation.notes || ''
+                            });
+                        });
+                    }
+                } else {
+                    // Load annotated data
+                    const endpoint = `/api/display_annotations/${filename}`;
+                    const response = await fetch(endpoint);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        content.innerHTML = `<div class="no-data">❌ Error: ${data.error}</div>`;
+                        return;
+                }
+                
+                allLines = data.lines;
+            }
+            
+            filteredLines = [...allLines];
+            unfilteredLines = [...allLines];
+            currentPage = 0;
+            renderPage();            } catch (error) {
+                content.innerHTML = `<div class="no-data">❌ Error loading concordance: ${error.message}</div>`;
+            }
+        }
+        
+        function renderPage() {
+            if (filteredLines.length === 0) {
+                content.innerHTML = '<div class="no-data">No concordance lines found</div>';
+                infoBar.style.display = 'none';
+                paginationDiv.style.display = 'none';
+                return;
+            }
+            
+            const startIdx = currentPage * rowsPerPage;
+            const endIdx = Math.min(startIdx + rowsPerPage, filteredLines.length);
+            const pageLines = filteredLines.slice(startIdx, endIdx);
+            
+            // Update info bar
+            const filterInfo = currentSource === 'annotated' && classificationSelect.value 
+                ? ` (${classificationSelect.value} only)`
+                : currentSource === 'annotated' 
+                ? ' (Annotated only)' 
+                : '';
+            
+            const sampleInfo = randomSampleEnabled 
+                ? ` <span style="color: #f5576c;">📊 Random Sample</span>` 
+                : '';
+            
+            infoBar.style.display = 'block';
+            infoBar.innerHTML = `
+                <span class="info-text">
+                    Showing ${startIdx + 1}-${endIdx} of ${filteredLines.length} concordance lines${filterInfo}${sampleInfo}
+                    ${filteredLines.length !== allLines.length ? ` (filtered from ${allLines.length} total)` : ''}
+                </span>
+            `;
+            
+            // Create table
+            const getSortClass = (col) => {
+                if (sortColumn !== col) return 'sortable';
+                return sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc';
+            };
+            
+            let html = `
+                <table class="concordance-table">
+                    <thead>
+                        <tr>
+                            <th class="${getSortClass('left')}" onclick="handleSort('left')">Left Context</th>
+                            <th>Keyword</th>
+                            <th class="${getSortClass('right')}" onclick="handleSort('right')">Right Context</th>
+                            <th class="${getSortClass('genre')}" onclick="handleSort('genre')">Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            pageLines.forEach((line, pageIdx) => {
+                const classificationBadge = line.classification 
+                    ? `<div class="classification-badge ${line.classification}">${line.classification}</div>`
+                    : '';
+                
+                const rowId = `row-${startIdx + pageIdx}`;
+                
+                html += `
+                    <tr id="${rowId}">
+                        <td class="left-context" title="${escapeHtml(line.left)}">
+                            <span class="left-context-inner">${escapeHtml(line.left)}</span>
+                        </td>
+                        <td class="keyword">${escapeHtml(line.keyword)}</td>
+                        <td class="right-context" title="${escapeHtml(line.right)}">${escapeHtml(line.right)}</td>
+                        <td class="meta-column">
+                            <div class="genre-tag">${line.genre}</div>
+                            <div style="margin-top: 5px; font-size: 0.85em; color: #6e6e73;">ID: ${line.text_id}</div>
+                            ${classificationBadge}
+                        </td>
+                    </tr>
+                `;
+                
+                // Add annotation controls row if enabled and in raw mode
+                if (annotationEnabled && currentSource === 'raw') {
+                    const lineIdx = startIdx + pageIdx;
+                    const currentClassification = line.classification || '';
+                    const currentNotes = line.notes || '';
+                    
+                    html += `
+                        <tr>
+                            <td colspan="4" class="annotation-controls">
+                                <div class="annotation-buttons">
+                                    <button class="annotation-btn literal ${currentClassification === 'literal' ? 'selected' : ''}" 
+                                            onclick="setClassification(${lineIdx}, 'literal')">
+                                        Literal (narrow)
+                                    </button>
+                                    <button class="annotation-btn figurative ${currentClassification === 'figurative' ? 'selected' : ''}" 
+                                            onclick="setClassification(${lineIdx}, 'figurative')">
+                                        Figurative (broad)
+                                    </button>
+                                    <button class="annotation-btn neither ${currentClassification === 'neither' ? 'selected' : ''}" 
+                                            onclick="setClassification(${lineIdx}, 'neither')">
+                                        Neither
+                                    </button>
+                                    <button class="annotation-btn unclear ${currentClassification === 'unclear' ? 'selected' : ''}" 
+                                            onclick="setClassification(${lineIdx}, 'unclear')">
+                                        Unclear
+                                    </button>
+                                </div>
+                                <textarea class="annotation-notes" 
+                                          id="notes-${lineIdx}" 
+                                          placeholder="Add notes (optional)..."
+                                          onblur="saveNotes(${lineIdx})">${escapeHtml(currentNotes)}</textarea>
+                                <div class="save-status" id="status-${lineIdx}"></div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            content.innerHTML = html;
+            
+            // Update pagination
+            renderPagination();
+        }
+        
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredLines.length / rowsPerPage);
+            
+            if (totalPages <= 1) {
+                paginationDiv.style.display = 'none';
+                return;
+            }
+            
+            paginationDiv.style.display = 'flex';
+            paginationDiv.innerHTML = `
+                <button onclick="changePage(-1)" ${currentPage === 0 ? 'disabled' : ''}>
+                    ← Previous
+                </button>
+                <span class="page-info">
+                    Page ${currentPage + 1} of ${totalPages}
+                </span>
+                <button onclick="changePage(1)" ${currentPage === totalPages - 1 ? 'disabled' : ''}>
+                    Next →
+                </button>
+            `;
+        }
+        
+        function changePage(direction) {
+            currentPage += direction;
+            renderPage();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function setClassification(lineIdx, classification) {
+            const line = filteredLines[lineIdx];
+            if (!line) return;
+            
+            const statusEl = document.getElementById(`status-${lineIdx}`);
+            statusEl.textContent = '💾 Saving...';
+            statusEl.className = 'save-status';
+            
+            try {
+                const notesEl = document.getElementById(`notes-${lineIdx}`);
+                const notes = notesEl ? notesEl.value : '';
+                
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: currentFilename,
+                        genre_key: line.genre,
+                        index: line.index,
+                        annotation: {
+                            classification: classification,
+                            notes: notes
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update local data
+                    line.classification = classification;
+                    line.notes = notes;
+                    
+                    statusEl.textContent = '✓ Saved';
+                    statusEl.className = 'save-status success';
+                    
+                    // Update button states
+                    const row = document.getElementById(`row-${lineIdx}`);
+                    if (row && row.nextElementSibling) {
+                        const buttons = row.nextElementSibling.querySelectorAll('.annotation-btn');
+                        buttons.forEach(btn => {
+                            btn.classList.remove('selected');
+                            if (btn.classList.contains(classification)) {
+                                btn.classList.add('selected');
+                            }
+                        });
+                    }
+                    
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                    }, 2000);
+                } else {
+                    statusEl.textContent = '✗ Error saving';
+                    statusEl.className = 'save-status error';
+                }
+            } catch (error) {
+                statusEl.textContent = '✗ Error: ' + error.message;
+                statusEl.className = 'save-status error';
+            }
+        }
+        
+        async function saveNotes(lineIdx) {
+            const line = filteredLines[lineIdx];
+            if (!line || !line.classification) return; // Only save notes if classification exists
+            
+            const notesEl = document.getElementById(`notes-${lineIdx}`);
+            const notes = notesEl.value;
+            
+            // Only save if notes changed
+            if (notes === line.notes) return;
+            
+            const statusEl = document.getElementById(`status-${lineIdx}`);
+            statusEl.textContent = '💾 Saving notes...';
+            statusEl.className = 'save-status';
+            
+            try {
+                const response = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: currentFilename,
+                        genre_key: line.genre,
+                        index: line.index,
+                        annotation: {
+                            classification: line.classification,
+                            notes: notes
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    line.notes = notes;
+                    statusEl.textContent = '✓ Notes saved';
+                    statusEl.className = 'save-status success';
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                    }, 2000);
+                } else {
+                    statusEl.textContent = '✗ Error saving notes';
+                    statusEl.className = 'save-status error';
+                }
+            } catch (error) {
+                statusEl.textContent = '✗ Error: ' + error.message;
+                statusEl.className = 'save-status error';
+            }
+        }
+        
+        function truncateLeft(text, maxChars) {
+            if (text.length <= maxChars) return text;
+            return '...' + text.slice(-maxChars);
+        }
+        
+        function truncateRight(text, maxChars) {
+            if (text.length <= maxChars) return text;
+            return text.slice(0, maxChars) + '...';
+        }
+    </script>
+
+{% include 'footer.html' %}

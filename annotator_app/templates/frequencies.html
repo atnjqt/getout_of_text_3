@@ -1,0 +1,516 @@
+{% include 'header.html' %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+        
+        select:hover {
+            border-color: #667eea;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .frequency-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .frequency-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .frequency-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .frequency-table th:not(:first-child) {
+            text-align: center;
+        }
+        
+        .frequency-table tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        
+        .frequency-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .frequency-table td {
+            padding: 14px 16px;
+            font-size: 0.95rem;
+        }
+        
+        .frequency-table td:first-child {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .frequency-table td:not(:first-child) {
+            text-align: center;
+        }
+        
+        .count-cell {
+            font-weight: 600;
+        }
+        
+        .percentage-cell {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .total-row {
+            background: rgba(102, 126, 234, 0.05);
+            font-weight: 700;
+        }
+        
+        .total-row td:first-child {
+            color: #667eea;
+        }
+        
+        .literal-col {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, transparent 100%);
+        }
+        
+        .figurative-col {
+            background: linear-gradient(90deg, rgba(245, 87, 108, 0.05) 0%, transparent 100%);
+        }
+        
+        .unclear-col {
+            background: linear-gradient(90deg, rgba(56, 249, 215, 0.05) 0%, transparent 100%);
+        }
+        
+        .neither-col {
+            background: linear-gradient(90deg, rgba(0, 242, 254, 0.05) 0%, transparent 100%);
+        }
+        
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .stat-card .count {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .literal-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .figurative-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .neither-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .unclear-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Genre Frequency Analysis</h1>
+        <p class="subtitle">Distribution of classifications across different genres</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileSelect">Select Annotation File:</label>
+                <select id="fileSelect">
+                    <option value="">-- Select a file --</option>
+                    {% for file in files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading hidden">Loading frequency analysis...</div>
+        <div id="error" class="error hidden"></div>
+        
+        <div id="statsContainer" class="stats-summary hidden"></div>
+        
+        <div id="chartContainer" class="chart-container hidden">
+            <div class="chart-title">Classification Distribution by Genre</div>
+            <canvas id="genreChart"></canvas>
+        </div>
+        
+        <div id="tableContainer" class="hidden"></div>
+    </div>
+    
+    <script>
+        let currentChart = null;
+        
+        document.getElementById('fileSelect').addEventListener('change', function() {
+            const filename = this.value;
+            if (filename) {
+                loadAnalysis(filename);
+            }
+        });
+        
+        function loadAnalysis(filename) {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const statsContainer = document.getElementById('statsContainer');
+            const chartContainer = document.getElementById('chartContainer');
+            const tableContainer = document.getElementById('tableContainer');
+            
+            loading.classList.remove('hidden');
+            error.classList.add('hidden');
+            statsContainer.classList.add('hidden');
+            chartContainer.classList.add('hidden');
+            tableContainer.classList.add('hidden');
+            
+            if (currentChart) {
+                currentChart.destroy();
+                currentChart = null;
+            }
+            
+            fetch(`/api/frequencies/${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.classList.add('hidden');
+                    if (data.error) {
+                        error.textContent = data.error;
+                        error.classList.remove('hidden');
+                    } else {
+                        renderStats(data);
+                        renderChart(data);
+                        renderTable(data);
+                    }
+                })
+                .catch(err => {
+                    loading.classList.add('hidden');
+                    error.textContent = 'Failed to load frequency analysis: ' + err.message;
+                    error.classList.remove('hidden');
+                });
+        }
+        
+        function renderStats(data) {
+            const statsContainer = document.getElementById('statsContainer');
+            const totals = data.classification_totals;
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card literal-card">
+                    <h3>Literal (narrow)</h3>
+                    <div class="count">${totals.literal || 0}</div>
+                </div>
+                <div class="stat-card figurative-card">
+                    <h3>Figurative (broad)</h3>
+                    <div class="count">${totals.figurative || 0}</div>
+                </div>
+                <div class="stat-card unclear-card">
+                    <h3>Unclear</h3>
+                    <div class="count">${totals.unclear || 0}</div>
+                </div>
+                <div class="stat-card neither-card">
+                    <h3>Neither</h3>
+                    <div class="count">${totals.neither || 0}</div>
+                </div>
+            `;
+            
+            statsContainer.classList.remove('hidden');
+        }
+        
+        function renderChart(data) {
+            const chartContainer = document.getElementById('chartContainer');
+            const ctx = document.getElementById('genreChart').getContext('2d');
+            
+            const genres = data.sorted_genres;
+            const genreCounts = data.genre_counts;
+            
+            const datasets = [
+                {
+                    label: 'Literal',
+                    data: genres.map(g => genreCounts[g].literal),
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderColor: 'rgba(102, 126, 234, 1)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Figurative',
+                    data: genres.map(g => genreCounts[g].figurative),
+                    backgroundColor: 'rgba(245, 87, 108, 0.8)',
+                    borderColor: 'rgba(245, 87, 108, 1)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Unclear',
+                    data: genres.map(g => genreCounts[g].unclear),
+                    backgroundColor: 'rgba(56, 249, 215, 0.8)',
+                    borderColor: 'rgba(56, 249, 215, 1)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Neither',
+                    data: genres.map(g => genreCounts[g].neither),
+                    backgroundColor: 'rgba(0, 242, 254, 0.8)',
+                    borderColor: 'rgba(0, 242, 254, 1)',
+                    borderWidth: 2
+                }
+            ];
+            
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: genres,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            stacked: false,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            stacked: false,
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            }
+                        }
+                    }
+                }
+            });
+            
+            chartContainer.classList.remove('hidden');
+        }
+        
+        function renderTable(data) {
+            const tableContainer = document.getElementById('tableContainer');
+            const genres = data.sorted_genres;
+            const genreCounts = data.genre_counts;
+            const genrePercentages = data.genre_percentages;
+            const classificationTotals = data.classification_totals;
+            
+            const table = document.createElement('table');
+            table.className = 'frequency-table';
+            
+            // Header
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Genre</th>
+                        <th>Literal (narrow)</th>
+                        <th>Figurative (broad)</th>
+                        <th>Unclear</th>
+                        <th>Neither</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            `;
+            
+            const tbody = table.querySelector('tbody');
+            
+            // Data rows
+            genres.forEach(genre => {
+                const counts = genreCounts[genre];
+                const percentages = genrePercentages[genre];
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${genre}</td>
+                    <td class="literal-col">
+                        <div class="count-cell">${counts.literal}</div>
+                        <div class="percentage-cell">(${percentages.literal}%)</div>
+                    </td>
+                    <td class="figurative-col">
+                        <div class="count-cell">${counts.figurative}</div>
+                        <div class="percentage-cell">(${percentages.figurative}%)</div>
+                    </td>
+                    <td class="unclear-col">
+                        <div class="count-cell">${counts.unclear}</div>
+                        <div class="percentage-cell">(${percentages.unclear}%)</div>
+                    </td>
+                    <td class="neither-col">
+                        <div class="count-cell">${counts.neither}</div>
+                        <div class="percentage-cell">(${percentages.neither}%)</div>
+                    </td>
+                    <td><strong>${counts.total}</strong></td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Total row
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'total-row';
+            const grandTotal = classificationTotals.literal + classificationTotals.figurative + 
+                              classificationTotals.unclear + classificationTotals.neither;
+            totalRow.innerHTML = `
+                <td>TOTAL</td>
+                <td class="count-cell">${classificationTotals.literal}</td>
+                <td class="count-cell">${classificationTotals.figurative}</td>
+                <td class="count-cell">${classificationTotals.unclear}</td>
+                <td class="count-cell">${classificationTotals.neither}</td>
+                <td><strong>${grandTotal}</strong></td>
+            `;
+            tbody.appendChild(totalRow);
+            
+            tableContainer.innerHTML = '';
+            tableContainer.appendChild(table);
+            tableContainer.classList.remove('hidden');
+        }
+    </script>
+
+{% include 'footer.html' %}

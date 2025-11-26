@@ -1,0 +1,1203 @@
+{% include 'header.html' %}
+
+<style>
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+        
+        select:hover {
+            border-color: #667eea;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .classification-section {
+            margin-bottom: 40px;
+        }
+        
+        .classification-header {
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s;
+        }
+        
+        .classification-header:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .classification-toggle {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+        
+        .classification-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .literal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .figurative-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .neither-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .unclear-header {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .all-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .cluster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .cluster-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid;
+        }
+        
+        .cluster-card.literal {
+            border-left-color: #667eea;
+        }
+        
+        .cluster-card.figurative {
+            border-left-color: #f5576c;
+        }
+        
+        .cluster-card.neither {
+            border-left-color: #00f2fe;
+        }
+        
+        .cluster-card.unclear {
+            border-left-color: #38f9d7;
+        }
+        
+        .cluster-card.all {
+            border-left-color: #667eea;
+        }
+        
+        .cluster-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .cluster-stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-item {
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .stat-box {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-box-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .stat-box-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .percentage-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+            position: relative;
+        }
+        
+        .percentage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .diversity-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        
+        .diversity-high {
+            background: #d1f4e0;
+            color: #0d5c2c;
+        }
+        
+        .diversity-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .diversity-low {
+            background: #ffe5e5;
+            color: #c70000;
+        }
+        
+        .cluster-overview {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .overview-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .overview-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .overview-card-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .overview-card-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.9rem;
+        }
+        
+        .comparison-table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+            position: sticky;
+            top: 0;
+        }
+        
+        .comparison-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .comparison-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        
+        .tag-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .tag-badge .count {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 5px;
+        }
+        
+        .bigram-badge {
+            background: #f5576c;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .bigram-badge .count {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 5px;
+        }
+        
+        .cluster-items {
+            margin-top: 15px;
+        }
+        
+        .cluster-items-header {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .cluster-items-header:hover {
+            background: #e9ecef;
+        }
+        
+        .kwic-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .kwic-item strong {
+            color: #667eea;
+        }
+        
+        .item-meta {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .annotation-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 8px;
+            margin-right: 8px;
+        }
+        
+        .badge-literal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .badge-figurative {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .badge-neither {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .badge-unclear {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        
+        .badge-unannotated {
+            background: #e0e0e0;
+            color: #666;
+        }
+        
+        .annotation-notes {
+            font-size: 0.85rem;
+            font-style: italic;
+            color: #666;
+            margin-top: 8px;
+            padding: 8px;
+            background: #fff8e1;
+            border-radius: 6px;
+            border-left: 3px solid #ffc107;
+        }
+        
+        .pos-sequence {
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .description h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .description p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+        
+        .description ul {
+            margin-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        .error-message {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+        
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .stats-header:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .stats-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .stats-toggle {
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+        
+        .stats-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .stats-content {
+            margin-top: 20px;
+        }
+        
+        .chart-container {
+            margin-bottom: 30px;
+        }
+        
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .bar-label {
+            min-width: 100px;
+            font-weight: 600;
+            color: #555;
+            text-transform: capitalize;
+        }
+        
+        .bar-wrapper {
+            flex: 1;
+            background: #f0f0f0;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            height: 35px;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: width 0.5s ease;
+        }
+        
+        .bar-fill.literal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .bar-fill.figurative {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .bar-fill.neither {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .bar-fill.unclear {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+        
+        .metric-card.literal {
+            border-left-color: #667eea;
+        }
+        
+        .metric-card.figurative {
+            border-left-color: #f5576c;
+        }
+        
+        .metric-card.neither {
+            border-left-color: #00f2fe;
+        }
+        
+        .metric-card.unclear {
+            border-left-color: #38f9d7;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: capitalize;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .metric-subtitle {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 POS-Based Clustering Analysis</h1>
+        <p class="subtitle">Discover syntactic patterns using Part-of-Speech clustering within classification categories</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileSelect">Select Annotation File:</label>
+                <select id="fileSelect">
+                    <option value="">-- Select a file --</option>
+                    {% for file in files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="modeSelect">Data Mode:</label>
+                <select id="modeSelect">
+                    <option value="annotated">Annotated KWIC (by classification)</option>
+                    <option value="raw">Raw KWIC (all data)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="description">
+            <h3>Clustering Methodology:</h3>
+            <ul>
+                <li><strong>POS Tagging:</strong> Each KWIC context is analyzed with spaCy to extract part-of-speech tags</li>
+                <li><strong>Feature Engineering:</strong> Documents are represented as vectors of POS tag frequencies, bigrams, and trigrams</li>
+                <li><strong>Vectorization:</strong> Features are normalized using StandardScaler to ensure equal weighting</li>
+                <li><strong>K-Means Clustering:</strong> Groups similar syntactic patterns within each classification category</li>
+                <li><strong>Pattern Discovery:</strong> Reveals the most common POS patterns characterizing each cluster</li>
+            </ul>
+        </div>
+        
+        <div id="loading" class="loading hidden">Loading clustering analysis...</div>
+        <div id="error" class="error hidden"></div>
+        <div id="overview"></div>
+        <div id="stats"></div>
+        <div id="content"></div>
+    </div>
+    
+    <script>
+        document.getElementById('fileSelect').addEventListener('change', function() {
+            const filename = this.value;
+            if (filename) {
+                loadAnalysis(filename);
+            }
+        });
+        
+        document.getElementById('modeSelect').addEventListener('change', function() {
+            const filename = document.getElementById('fileSelect').value;
+            if (filename) {
+                loadAnalysis(filename);
+            }
+        });
+        
+        function loadAnalysis(filename) {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const content = document.getElementById('content');
+            const overview = document.getElementById('overview');
+            const mode = document.getElementById('modeSelect').value;
+            
+            loading.classList.remove('hidden');
+            error.classList.add('hidden');
+            content.innerHTML = '';
+            overview.innerHTML = '';
+            
+            fetch(`/api/clustering/${filename}?mode=${mode}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.classList.add('hidden');
+                    if (data.error) {
+                        error.textContent = 'Error: ' + data.error;
+                        if (data.traceback) {
+                            error.textContent += '\n\n' + data.traceback;
+                        }
+                        error.classList.remove('hidden');
+                    } else {
+                        renderClusters(data);
+                    }
+                })
+                .catch(err => {
+                    loading.classList.add('hidden');
+                    error.textContent = 'Failed to load clustering analysis: ' + err.message;
+                    error.classList.remove('hidden');
+                });
+        }
+        
+        function renderClusters(data) {
+            const content = document.getElementById('content');
+            const statsDiv = document.getElementById('stats');
+            const overview = document.getElementById('overview');
+            
+            // Validate data structure
+            if (!data || !data.results) {
+                content.innerHTML = '<div class="error">Invalid data structure received from server</div>';
+                return;
+            }
+            
+            const results = data.results;
+            const mode = data.mode || 'annotated';
+            
+            // Clear previous content
+            content.innerHTML = '';
+            statsDiv.innerHTML = '';
+            overview.innerHTML = '';
+            
+            let classifications;
+            let headerClasses;
+            let cardClasses;
+            
+            if (mode === 'raw') {
+                classifications = ['all'];
+                headerClasses = { all: 'all-header' };
+                cardClasses = { all: 'all' };
+            } else {
+                classifications = ['literal', 'figurative', 'neither', 'unclear'];
+                headerClasses = {
+                    literal: 'literal-header',
+                    figurative: 'figurative-header',
+                    neither: 'neither-header',
+                    unclear: 'unclear-header'
+                };
+                cardClasses = {
+                    literal: 'literal',
+                    figurative: 'figurative',
+                    neither: 'neither',
+                    unclear: 'unclear'
+                };
+                
+                // Render statistics visualizations for annotated mode
+                renderStatistics(results, classifications, statsDiv);
+            }
+            
+            classifications.forEach(classification => {
+                const result = results[classification];
+                if (!result) return;
+                
+                const section = document.createElement('div');
+                section.className = 'classification-section';
+                
+                const header = document.createElement('div');
+                header.className = `classification-header ${headerClasses[classification]}`;
+                
+                if (result.error) {
+                    header.innerHTML = `
+                        <span>${classification.toUpperCase()}</span>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span>${result.count || 0} items</span>
+                            <span class="classification-toggle">▼</span>
+                        </div>
+                    `;
+                    
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'error-message';
+                    errorMsg.textContent = result.error;
+                    
+                    // Make collapsible
+                    header.addEventListener('click', () => {
+                        const isHidden = errorMsg.classList.contains('hidden');
+                        errorMsg.classList.toggle('hidden');
+                        const toggle = header.querySelector('.classification-toggle');
+                        toggle.classList.toggle('collapsed');
+                    });
+                    
+                    section.appendChild(header);
+                    section.appendChild(errorMsg);
+                    
+                    content.appendChild(section);
+                    return;
+                }
+                
+                header.innerHTML = `
+                    <span>${classification.toUpperCase()}</span>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span>${result.count} items | ${result.n_clusters} clusters</span>
+                        <span class="classification-toggle">▼</span>
+                    </div>
+                `;
+                
+                // Make collapsible
+                const grid = document.createElement('div');
+                grid.className = 'cluster-grid';
+                
+                header.addEventListener('click', () => {
+                    const isHidden = grid.classList.contains('hidden');
+                    grid.classList.toggle('hidden');
+                    const toggle = header.querySelector('.classification-toggle');
+                    toggle.classList.toggle('collapsed');
+                });
+                
+                section.appendChild(header);
+                
+                // Skip if no clusters
+                if (!result.clusters || result.clusters.length === 0) {
+                    content.appendChild(section);
+                    return;
+                }
+                
+                result.clusters.forEach(cluster => {
+                    const card = document.createElement('div');
+                    card.className = `cluster-card ${cardClasses[classification]}`;
+                    
+                    const title = document.createElement('div');
+                    title.className = 'cluster-title';
+                    title.textContent = `Cluster ${cluster.label + 1}`;
+                    card.appendChild(title);
+                    
+                    // Enhanced Stats
+                    const stats = document.createElement('div');
+                    stats.className = 'cluster-stats';
+                    
+                    // Calculate additional metrics
+                    const clusterPercentage = ((cluster.size / result.count) * 100).toFixed(1);
+                    const uniqueTags = cluster.top_tags.length;
+                    const uniqueBigrams = cluster.top_bigrams.length;
+                    
+                    // Calculate tag diversity (unique tags / total tag occurrences)
+                    const totalTagOccurrences = cluster.top_tags.reduce((sum, t) => sum + t.count, 0);
+                    const tagDiversity = uniqueTags / totalTagOccurrences;
+                    const diversityLabel = tagDiversity > 0.15 ? 'High' : tagDiversity > 0.08 ? 'Medium' : 'Low';
+                    const diversityClass = tagDiversity > 0.15 ? 'diversity-high' : tagDiversity > 0.08 ? 'diversity-medium' : 'diversity-low';
+                    
+                    // Most dominant POS tag
+                    const dominantTag = cluster.top_tags[0];
+                    const dominantPercentage = ((dominantTag.count / totalTagOccurrences) * 100).toFixed(1);
+                    
+                    stats.innerHTML = `
+                        <div class="stat-item">
+                            <div class="stat-label">Size: ${cluster.size} items (${clusterPercentage}% of total)
+                                <span class="diversity-indicator ${diversityClass}">
+                                    ${diversityLabel} Diversity
+                                </span>
+                            </div>
+                            <div class="percentage-bar">
+                                <div class="percentage-fill" style="width: ${clusterPercentage}%">
+                                    ${clusterPercentage}%
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-grid">
+                            <div class="stat-box">
+                                <div class="stat-box-label">Most Common Tag</div>
+                                <div class="stat-box-value">${dominantTag.tag}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="stat-box-label">Tag Dominance</div>
+                                <div class="stat-box-value">${dominantPercentage}%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item" style="margin-top: 15px;">
+                            <div class="stat-label">Top POS Tags:</div>
+                            <div class="tag-list">
+                                ${cluster.top_tags.map(t => `
+                                    <span class="tag-badge">
+                                        ${t.tag}
+                                        <span class="count">${t.count}</span>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Top POS Bigrams:</div>
+                            <div class="tag-list">
+                                ${cluster.top_bigrams.map(b => `
+                                    <span class="bigram-badge">
+                                        ${b.bigram}
+                                        <span class="count">${b.count}</span>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Top POS Trigrams:</div>
+                            <div class="tag-list">
+                                ${cluster.top_trigrams ? cluster.top_trigrams.map(t => `
+                                    <span class="bigram-badge" style="background: #00c7be;">
+                                        ${t.trigram}
+                                        <span class="count">${t.count}</span>
+                                    </span>
+                                `).join('') : 'N/A'}
+                            </div>
+                        </div>
+                    `;
+                    card.appendChild(stats);
+                    
+                    // Items
+                    const itemsContainer = document.createElement('div');
+                    itemsContainer.className = 'cluster-items';
+                    
+                    const itemsHeader = document.createElement('div');
+                    itemsHeader.className = 'cluster-items-header';
+                    itemsHeader.innerHTML = `
+                        <span>View Examples (${cluster.items.length})</span>
+                        <span class="toggle">▼</span>
+                    `;
+                    
+                    const itemsList = document.createElement('div');
+                    itemsList.className = 'items-list';
+                    
+                    // Add items if they exist
+                    if (cluster.items) {
+                        cluster.items.forEach(item => {
+                            const kwicDiv = document.createElement('div');
+                        kwicDiv.className = 'kwic-item';
+                        
+                        let annotationBadge = '';
+                        let annotationNotes = '';
+                        
+                        if (item.annotation_class) {
+                            const badgeClass = item.annotation_class === 'unannotated' 
+                                ? 'badge-unannotated' 
+                                : `badge-${item.annotation_class}`;
+                            const displayText = item.annotation_class === 'unannotated'
+                                ? 'Not Annotated'
+                                : item.annotation_class.charAt(0).toUpperCase() + item.annotation_class.slice(1);
+                            annotationBadge = `<span class="annotation-badge ${badgeClass}">${displayText}</span>`;
+                        }
+                        
+                        if (item.notes) {
+                            annotationNotes = `<div class="annotation-notes"><strong>Notes:</strong> ${item.notes}</div>`;
+                        }
+                        
+                        kwicDiv.innerHTML = `
+                            ${item.text}
+                            <div class="item-meta">Genre: ${item.genre} | Text ID: ${item.text_id || 'N/A'}</div>
+                            <div class="pos-sequence">${item.pos_sequence}</div>
+                            ${annotationBadge}
+                            ${annotationNotes}
+                        `;
+                        itemsList.appendChild(kwicDiv);
+                        });
+                    }
+                    
+                    itemsHeader.addEventListener('click', () => {
+                        const isHidden = itemsList.classList.contains('hidden');
+                        itemsList.classList.toggle('hidden');
+                        itemsHeader.querySelector('.toggle').textContent = isHidden ? '▼' : '▶';
+                    });
+                    
+                    itemsList.classList.add('hidden');
+                    
+                    itemsContainer.appendChild(itemsHeader);
+                    itemsContainer.appendChild(itemsList);
+                    card.appendChild(itemsContainer);
+                    
+                    grid.appendChild(card);
+                });
+                
+                section.appendChild(grid);
+                content.appendChild(section);
+            });
+        }
+        
+        function renderStatistics(results, classifications, container) {
+            // Collect statistics
+            const stats = {};
+            let maxTotal = 0;
+            
+            classifications.forEach(classification => {
+                const result = results[classification];
+                if (!result || result.error) return;
+                
+                const total = result.count;
+                maxTotal = Math.max(maxTotal, total);
+                
+                // Calculate balance metrics
+                const clusterSizes = result.clusters.map(c => c.size);
+                const largest = Math.max(...clusterSizes);
+                const smallest = Math.min(...clusterSizes);
+                const balance = smallest / largest; // 1.0 = perfect balance, lower = more skewed
+                
+                stats[classification] = {
+                    total: total,
+                    n_clusters: result.n_clusters,
+                    largest_cluster: largest,
+                    smallest_cluster: smallest,
+                    balance_ratio: balance,
+                    clusters: result.clusters
+                };
+            });
+            
+            if (Object.keys(stats).length === 0) return;
+            
+            // Create stats section
+            const section = document.createElement('div');
+            section.className = 'stats-section';
+            
+            // === CLUSTER SIZE DISTRIBUTION ===
+            const sizeHeader = document.createElement('div');
+            sizeHeader.className = 'stats-header';
+            sizeHeader.innerHTML = `
+                <span class="stats-title">📊 Cluster Size Distribution</span>
+                <span class="stats-toggle">▼</span>
+            `;
+            
+            const sizeContent = document.createElement('div');
+            sizeContent.className = 'stats-content';
+            
+            const sizeChartTitle = document.createElement('div');
+            sizeChartTitle.className = 'chart-title';
+            sizeChartTitle.textContent = 'Total Items per Classification';
+            sizeContent.appendChild(sizeChartTitle);
+            
+            const barChart = document.createElement('div');
+            barChart.className = 'bar-chart';
+            
+            classifications.forEach(classification => {
+                if (!stats[classification]) return;
+                
+                const barItem = document.createElement('div');
+                barItem.className = 'bar-item';
+                
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = classification;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bar-wrapper';
+                
+                const fill = document.createElement('div');
+                fill.className = `bar-fill ${classification}`;
+                const percentage = (stats[classification].total / maxTotal) * 100;
+                fill.style.width = `${percentage}%`;
+                fill.textContent = `${stats[classification].total} items`;
+                
+                wrapper.appendChild(fill);
+                barItem.appendChild(label);
+                barItem.appendChild(wrapper);
+                barChart.appendChild(barItem);
+            });
+            
+            sizeContent.appendChild(barChart);
+            
+            // Toggle for size distribution
+            sizeHeader.addEventListener('click', () => {
+                const isHidden = sizeContent.classList.contains('hidden');
+                sizeContent.classList.toggle('hidden');
+                const toggle = sizeHeader.querySelector('.stats-toggle');
+                toggle.classList.toggle('collapsed');
+            });
+            
+            section.appendChild(sizeHeader);
+            section.appendChild(sizeContent);
+            
+            // === CLUSTER BALANCE METRICS ===
+            const balanceHeader = document.createElement('div');
+            balanceHeader.className = 'stats-header';
+            balanceHeader.innerHTML = `
+                <span class="stats-title">⚖️ Cluster Balance Metrics</span>
+                <span class="stats-toggle">▼</span>
+            `;
+            
+            const balanceContent = document.createElement('div');
+            balanceContent.className = 'stats-content';
+            
+            const balanceDescription = document.createElement('div');
+            balanceDescription.style.cssText = 'color: #666; margin-bottom: 20px; line-height: 1.6;';
+            balanceDescription.innerHTML = `
+                <strong>Balance Ratio</strong> measures how evenly items are distributed across clusters. 
+                A ratio of 1.0 indicates perfect balance (all clusters have equal size), 
+                while lower values indicate more skewed distributions where some clusters dominate.
+            `;
+            balanceContent.appendChild(balanceDescription);
+            
+            const metricGrid = document.createElement('div');
+            metricGrid.className = 'metric-grid';
+            
+            classifications.forEach(classification => {
+                if (!stats[classification]) return;
+                
+                const card = document.createElement('div');
+                card.className = `metric-card ${classification}`;
+                
+                const s = stats[classification];
+                const balancePercent = (s.balance_ratio * 100).toFixed(1);
+                
+                card.innerHTML = `
+                    <div class="metric-label">${classification}</div>
+                    <div class="metric-value">${balancePercent}%</div>
+                    <div class="metric-subtitle">Balance Ratio</div>
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                        <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">
+                            <strong>${s.n_clusters}</strong> clusters
+                        </div>
+                        <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">
+                            Largest: <strong>${s.largest_cluster}</strong> items
+                        </div>
+                        <div style="font-size: 0.85rem; color: #666;">
+                            Smallest: <strong>${s.smallest_cluster}</strong> items
+                        </div>
+                    </div>
+                `;
+                
+                metricGrid.appendChild(card);
+            });
+            
+            balanceContent.appendChild(metricGrid);
+            
+            // Toggle for balance metrics
+            balanceHeader.addEventListener('click', () => {
+                const isHidden = balanceContent.classList.contains('hidden');
+                balanceContent.classList.toggle('hidden');
+                const toggle = balanceHeader.querySelector('.stats-toggle');
+                toggle.classList.toggle('collapsed');
+            });
+            
+            section.appendChild(balanceHeader);
+            section.appendChild(balanceContent);
+            
+            container.appendChild(section);
+        }
+    </script>
+```
+
+{% include 'footer.html' %}

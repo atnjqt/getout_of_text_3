@@ -1,0 +1,332 @@
+{% include 'header.html' %}
+
+<style>
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+        
+        select:hover {
+            border-color: #667eea;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .analysis-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .analysis-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .analysis-table th:first-child {
+            text-align: left;
+        }
+        
+        .analysis-table th:not(:first-child) {
+            text-align: center;
+        }
+        
+        .analysis-table tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        
+        .analysis-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .analysis-table td {
+            padding: 16px;
+            font-size: 1rem;
+        }
+        
+        .analysis-table td:first-child {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .analysis-table td:not(:first-child) {
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .literal-row {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, transparent 100%);
+        }
+        
+        .figurative-row {
+            background: linear-gradient(90deg, rgba(245, 87, 108, 0.05) 0%, transparent 100%);
+        }
+        
+        .neither-row {
+            background: linear-gradient(90deg, rgba(0, 242, 254, 0.05) 0%, transparent 100%);
+        }
+        
+        .unclear-row {
+            background: linear-gradient(90deg, rgba(56, 249, 215, 0.05) 0%, transparent 100%);
+        }
+        
+        .count-cell {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .total-cell {
+            background: rgba(102, 126, 234, 0.1);
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .description h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .description ul {
+            margin-left: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        .description li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Syntactic Role Analysis</h1>
+        <p class="subtitle">Distribution of syntactic roles for "best system" across classification categories</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileSelect">Select Annotation File:</label>
+                <select id="fileSelect">
+                    <option value="">-- Select a file --</option>
+                    {% for file in files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="description">
+            <h3>Syntactic Role Definitions:</h3>
+            <ul>
+                <li><strong>Subject:</strong> nsubj, nsubjpass, csubj, csubjpass</li>
+                <li><strong>Direct Object:</strong> dobj, ccomp, xcomp</li>
+                <li><strong>Indirect Object:</strong> iobj, dative</li>
+                <li><strong>Subject/Object Complement:</strong> acomp, attr</li>
+                <li><strong>Adjunct:</strong> advmod, npadvmod, prep, advcl, obl, nmod</li>
+                <li><strong>Total:</strong> Total KWIC hits in each classification</li>
+            </ul>
+        </div>
+        
+        <div id="loading" class="loading hidden">Loading analysis...</div>
+        <div id="error" class="error hidden"></div>
+        <div id="content"></div>
+    </div>
+    
+    <script>
+        document.getElementById('fileSelect').addEventListener('change', function() {
+            const filename = this.value;
+            if (filename) {
+                loadAnalysis(filename);
+            }
+        });
+        
+        function loadAnalysis(filename) {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const content = document.getElementById('content');
+            
+            loading.classList.remove('hidden');
+            error.classList.add('hidden');
+            content.innerHTML = '';
+            
+            fetch(`/api/subject_analysis/${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.classList.add('hidden');
+                    if (data.error) {
+                        error.textContent = data.error;
+                        error.classList.remove('hidden');
+                    } else {
+                        renderTable(data);
+                    }
+                })
+                .catch(err => {
+                    loading.classList.add('hidden');
+                    error.textContent = 'Failed to load analysis: ' + err.message;
+                    error.classList.remove('hidden');
+                });
+        }
+        
+        function renderTable(data) {
+            const content = document.getElementById('content');
+            const results = data.results;
+            
+            const table = document.createElement('table');
+            table.className = 'analysis-table';
+            
+            // Create header
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Syntactic Role</th>
+                        <th>Literal (narrow)</th>
+                        <th>Figurative (broad)</th>
+                        <th>Unclear</th>
+                        <th>Neither</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Subject</td>
+                        <td class="count-cell">${results.literal.subject}</td>
+                        <td class="count-cell">${results.figurative.subject}</td>
+                        <td class="count-cell">${results.unclear.subject}</td>
+                        <td class="count-cell">${results.neither.subject}</td>
+                    </tr>
+                    <tr>
+                        <td>Indirect Object</td>
+                        <td class="count-cell">${results.literal.indirect_object}</td>
+                        <td class="count-cell">${results.figurative.indirect_object}</td>
+                        <td class="count-cell">${results.unclear.indirect_object}</td>
+                        <td class="count-cell">${results.neither.indirect_object}</td>
+                    </tr>
+                    <tr>
+                        <td>Direct Object</td>
+                        <td class="count-cell">${results.literal.direct_object}</td>
+                        <td class="count-cell">${results.figurative.direct_object}</td>
+                        <td class="count-cell">${results.unclear.direct_object}</td>
+                        <td class="count-cell">${results.neither.direct_object}</td>
+                    </tr>
+                    <tr>
+                        <td>Subject/Object Complement</td>
+                        <td class="count-cell">${results.literal.complement}</td>
+                        <td class="count-cell">${results.figurative.complement}</td>
+                        <td class="count-cell">${results.unclear.complement}</td>
+                        <td class="count-cell">${results.neither.complement}</td>
+                    </tr>
+                    <tr>
+                        <td>Adjunct</td>
+                        <td class="count-cell">${results.literal.adjunct}</td>
+                        <td class="count-cell">${results.figurative.adjunct}</td>
+                        <td class="count-cell">${results.unclear.adjunct}</td>
+                        <td class="count-cell">${results.neither.adjunct}</td>
+                    </tr>
+                    <tr style="border-top: 3px solid #667eea;">
+                        <td><strong>Total</strong></td>
+                        <td class="count-cell total-cell">${results.literal.total}</td>
+                        <td class="count-cell total-cell">${results.figurative.total}</td>
+                        <td class="count-cell total-cell">${results.unclear.total}</td>
+                        <td class="count-cell total-cell">${results.neither.total}</td>
+                    </tr>
+                </tbody>
+            `;
+            
+            content.appendChild(table);
+        }
+    </script>
+
+{% include 'footer.html' %}
