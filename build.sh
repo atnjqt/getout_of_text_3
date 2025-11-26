@@ -108,7 +108,7 @@ else
 fi
 
 # ask if you want to upgrade the package with pip -U
-read -p "  👉 Do you want to upgrade the package locally with pip -U getout_of_text_3? (y/n): " upgrade
+read -p "  👉 Do you want to upgrade the package locally with `pip install -U getout_of_text_3`? (y/n): " upgrade
 if [ "$upgrade" == "y" ]; then
   echo -e "\n"
   echo "    Upgrading the package locally... ⬆️"
