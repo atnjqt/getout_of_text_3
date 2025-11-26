@@ -2,11 +2,20 @@
 data/
 ./data/*
 
+examples/**/*.md
+examples/**/*.json
+examples/**/*.xlsx
+examples/**/*.pdf
+examples/**/*.arrow
+exports/**/*.json
+
 .venv
 .venv/
 .venv_dev/
-
 .env
+
+.DS_Store
+**/*.DS_Store
 
 *.db
 __pycache__
