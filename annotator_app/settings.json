@@ -3,17 +3,17 @@
     {
       "full_name": "Corpus of Contemporary American English",
       "friendly_name": "COCA",
-      "relative_filepath": "data/english-corpora.org/coca"
+      "relative_filepath": "../data/english-corpora.org/coca"
     },
     {
       "full_name": "Corpus of Global Web-Based English",
       "friendly_name": "GLOWBE",
-      "relative_filepath": "data/english-corpora.org/glowbe"
+      "relative_filepath": "../data/english-corpora.org/glowbe"
     },
     {
       "full_name": "EcoLexicon English Corpus",
-      "friendly_name": "EcoLexicon",
-      "relative_filepath": "data/sketch-engine"
+      "friendly_name": "EEC",
+      "relative_filepath": "../data/sketch-engine"
     }
   ]
 }

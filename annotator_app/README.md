@@ -22,11 +22,16 @@ A Flask-based web application for manually coding KWIC (Key Word In Context) con
 
 1. Install dependencies:
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+  ```bash 
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  ```
+
+- you can install spacy models as needed, e.g.:
+  ```bash
+  python -m spacy download en_core_web_sm
+  ```
 
 ## Usage
 
