@@ -779,6 +779,11 @@ def settings():
     """Settings page for managing corpus entries."""
     return render_template('settings.html')
 
+@app.route('/help')
+def help_page():
+    """Help page with documentation for all features."""
+    return render_template('help.html')
+
 @app.route('/semantic-embedding')
 def semantic_embedding():
     """Semantic embedding analysis interface."""

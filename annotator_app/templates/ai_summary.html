@@ -30,6 +30,67 @@
             margin-bottom: 10px;
             font-size: 0.85em;
         }
+        
+        /* Dark mode support */
+        body[data-theme="dark"] h1,
+        body[data-theme="dark"] h2,
+        body[data-theme="dark"] h3 {
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .text-muted {
+            color: var(--text-secondary) !important;
+        }
+        
+        body[data-theme="dark"] .form-label {
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .form-control,
+        body[data-theme="dark"] .form-select {
+            background-color: var(--input-bg);
+            border-color: var(--border-secondary);
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .form-control:focus,
+        body[data-theme="dark"] .form-select:focus {
+            background-color: var(--input-bg);
+            border-color: #0071e3;
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .form-check-label {
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .form-check-input {
+            background-color: var(--input-bg);
+            border-color: var(--border-secondary);
+        }
+        
+        body[data-theme="dark"] .result-container {
+            background: var(--bg-tertiary);
+            border-color: var(--border-primary);
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .reasoning-container {
+            background: rgba(255, 193, 7, 0.2);
+            border-left-color: #ffc107;
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .metadata-badge {
+            background: var(--bg-quaternary);
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .alert {
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-primary);
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
