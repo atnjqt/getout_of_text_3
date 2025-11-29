@@ -360,6 +360,28 @@
             cursor: wait;
         }
         
+        .agent-btn {
+            background: #0071e3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+        
+        .agent-btn:hover {
+            background: #0077ed;
+        }
+        
+        .agent-btn:disabled {
+            background: #d2d2d7;
+            cursor: wait;
+        }
+        
         .spacy-analysis {
             display: none;
             margin-top: 15px;
@@ -367,6 +389,107 @@
             background: #fafafa;
             border: 2px solid #8e44ad;
             border-radius: 8px;
+        }
+        
+        .agent-analysis {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            background: #f0f9ff;
+            border: 2px solid #0071e3;
+            border-radius: 8px;
+        }
+        
+        .agent-analysis.visible {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .agent-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0071e3;
+        }
+        
+        .agent-header h3 {
+            color: #0071e3;
+            margin: 0;
+        }
+        
+        .agent-keyword {
+            font-size: 0.85em;
+            color: #6e6e73;
+            font-style: italic;
+        }
+        
+        .agent-content {
+            font-size: 0.95em;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+        
+        .agent-content h1, .agent-content h2, .agent-content h3 {
+            color: #0071e3;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+        
+        .agent-content h1 { font-size: 1.5em; }
+        .agent-content h2 { font-size: 1.3em; }
+        .agent-content h3 { font-size: 1.1em; }
+        
+        .agent-content ul, .agent-content ol {
+            margin-left: 1.5em;
+            margin-bottom: 1em;
+        }
+        
+        .agent-content li {
+            margin-bottom: 0.5em;
+        }
+        
+        .agent-content p {
+            margin-bottom: 1em;
+        }
+        
+        .agent-content code {
+            background: #f5f5f7;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .agent-content pre {
+            background: #f5f5f7;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+        
+        .agent-content pre code {
+            background: none;
+            padding: 0;
+        }
+        
+        .agent-content strong {
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .agent-content em {
+            font-style: italic;
+        }
+        
+        .agent-content blockquote {
+            border-left: 4px solid #0071e3;
+            padding-left: 1em;
+            margin-left: 0;
+            color: #6e6e73;
+            font-style: italic;
         }
         
         .spacy-analysis.visible {
@@ -802,6 +925,9 @@
             </div>
         </div>
     </div>
+    
+    <!-- Marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- Upload Modal -->
     <div id="uploadModal" class="modal" style="display: none;">
@@ -1251,6 +1377,18 @@
                         🔬 Load spaCy Morphology
                     </button>
                     
+                    <div style="display: inline-block; margin-left: 10px;">
+                        <input type="text" 
+                               id="keyword_input_${genreKey}_${index}" 
+                               class="keyword-input" 
+                               placeholder="Override keyword (optional)"
+                               style="padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 6px; font-size: 0.9em; width: 200px;">
+                    </div>
+                    
+                    <button class="agent-btn" onclick="loadAgentAnalysis(this, '${genreKey}', ${index})">
+                        🤖 AI Agent: Analyze Keyword
+                    </button>
+                    
                     <div class="spacy-analysis" id="spacy_${genreKey}_${index}">
                         <div class="spacy-header">
                             <h3>Morphological Analysis</h3>
@@ -1259,6 +1397,17 @@
                         <div class="dep-graph"></div>
                         <h4 style="margin-bottom: 10px;">Token Details:</h4>
                         <div class="tokens-container"></div>
+                    </div>
+                    
+                    <div class="agent-analysis" id="agent_${genreKey}_${index}">
+                        <div class="agent-header">
+                            <h3>🤖 AI Agent Analysis</h3>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span class="agent-keyword"></span>
+                                <span class="agent-timer" style="font-size: 0.85em; color: #6e6e73; font-style: italic;"></span>
+                            </div>
+                        </div>
+                        <div class="agent-content"></div>
                     </div>
                 </div>
             `;
@@ -1331,6 +1480,114 @@
             } catch (error) {
                 alert('Error loading spaCy analysis: ' + error.message);
                 button.textContent = '🔬 Load spaCy Morphology';
+            } finally {
+                button.disabled = false;
+            }
+        }
+        
+        async function loadAgentAnalysis(button, genreKey, index) {
+            const analysisDiv = document.getElementById(`agent_${genreKey}_${index}`);
+            
+            // Toggle if already loaded
+            if (analysisDiv.classList.contains('visible')) {
+                analysisDiv.classList.remove('visible');
+                button.textContent = '🤖 AI Agent: Analyze Keyword';
+                return;
+            }
+            
+            // Disable button while loading
+            button.disabled = true;
+            
+            // Start timer
+            const startTime = Date.now();
+            const timerSpan = analysisDiv.querySelector('.agent-timer');
+            
+            // Initialize timer display
+            timerSpan.textContent = '⏱️ 0.0s';
+            timerSpan.style.display = 'inline';
+            
+            // Update button with timer
+            button.textContent = '⏳ Agent Working...';
+            
+            // Update timer every 100ms
+            const timerInterval = setInterval(() => {
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                timerSpan.textContent = `⏱️ ${elapsed}s`;
+                button.textContent = `⏳ Agent Working... (${elapsed}s)`;
+            }, 100);
+            
+            // Get the context text and keyword from this KWIC item
+            const kwicItem = button.closest('.kwic-item');
+            const contextDiv = kwicItem.querySelector('.kwic-context');
+            const contextText = contextDiv.textContent;
+            
+            // Check if there's a custom keyword input
+            const keywordInput = document.getElementById(`keyword_input_${genreKey}_${index}`);
+            let keyword = '';
+            
+            if (keywordInput && keywordInput.value.trim()) {
+                // Use custom keyword if provided
+                keyword = keywordInput.value.trim();
+            } else {
+                // Extract keyword from the bold text
+                const keywordMatch = contextDiv.innerHTML.match(/<span class="keyword">(.*?)<\/span>/);
+                keyword = keywordMatch ? keywordMatch[1] : '';
+            }
+            
+            try {
+                const response = await fetch('/api/agent_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        context: contextText,
+                        keyword: keyword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // Stop timer
+                clearInterval(timerInterval);
+                const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                
+                if (result.success) {
+                    // Update keyword display
+                    analysisDiv.querySelector('.agent-keyword').textContent = 
+                        keyword ? `Keyword: "${keyword}"` : 'General Analysis';
+                    
+                    // Show final time
+                    timerSpan.textContent = `⏱️ ${totalTime}s`;
+                    
+                    // Render markdown as HTML using marked.js
+                    const contentDiv = analysisDiv.querySelector('.agent-content');
+                    if (typeof marked !== 'undefined') {
+                        // Configure marked for better rendering
+                        marked.setOptions({
+                            breaks: true,  // Convert line breaks to <br>
+                            gfm: true      // GitHub Flavored Markdown
+                        });
+                        contentDiv.innerHTML = marked.parse(result.analysis);
+                    } else {
+                        // Fallback if marked.js didn't load
+                        contentDiv.textContent = result.analysis;
+                    }
+                    
+                    // Show analysis
+                    analysisDiv.classList.add('visible');
+                    button.textContent = '🤖 Hide Agent Analysis';
+                } else {
+                    timerSpan.textContent = '';
+                    alert('Error loading agent analysis: ' + result.error);
+                    button.textContent = '🤖 AI Agent: Analyze Keyword';
+                }
+                
+            } catch (error) {
+                clearInterval(timerInterval);
+                timerSpan.textContent = '';
+                alert('Error loading agent analysis: ' + error.message);
+                button.textContent = '🤖 AI Agent: Analyze Keyword';
             } finally {
                 button.disabled = false;
             }

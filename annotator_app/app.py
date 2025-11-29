@@ -12,6 +12,18 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import re
 
+# Langchain imports for AI agent
+try:
+    from langchain.agents import create_agent
+    from langchain.tools import tool
+    from langchain.chat_models import init_chat_model
+    #from dotenv import load_dotenv
+    #load_dotenv()
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
+    print("⚠️ Langchain not available. AI agent features will be disabled.")
+
 app = Flask(__name__)
 
 # Helper function to strip HTML tags
@@ -176,6 +188,107 @@ def get_nlp():
             # Fallback to smaller model if large not available
             _nlp = spacy.load('en_core_web_sm')
     return _nlp
+
+# Initialize Langchain agent (lazy loading)
+_agent = None
+_langchain_tools = []
+
+if LANGCHAIN_AVAILABLE:
+    @tool
+    def get_morphology(text: str) -> str:
+        """Get morphological analysis from the input text.
+        
+        Args:
+            text: input text string
+        Returns:
+            morphology: list of tuples (token text, morphological features)
+        """
+        nlp = get_nlp()
+        doc = nlp(text)
+        morphology = [(token.text, str(token.morph)) for token in doc]
+        return str(morphology)
+    
+    @tool
+    def get_part_of_speech(text: str) -> str:
+        """Get part of speech tags for the input text."""
+        nlp = get_nlp()
+        doc = nlp(text)
+        pos_tags = [(token.text, token.pos_) for token in doc]
+        return str(pos_tags)
+    
+    @tool
+    def get_named_entities(text: str) -> str:
+        """Get named entities from the input text."""
+        nlp = get_nlp()
+        doc = nlp(text)
+        entities = [(ent.text, ent.label_) for ent in doc.ents]
+        return str(entities)
+    
+    @tool
+    def get_most_frequent_ngrams(text: str, n: int=2, top: int=10) -> str:
+        """Get the most frequent n-grams from the input text."""
+        nlp = get_nlp()
+        doc = nlp(text)
+        tokens = [token.text for token in doc]
+        # strip punctuation and lowercase
+        tokens = [token.lower().strip('.,!?;"\'()[]{}') for token in tokens]
+        tokens = [token for token in tokens if token]  # remove empty tokens
+        ngrams = []
+        for i in range(len(tokens)-n+1):
+            ngrams.append(" ".join(tokens[i:i+n]))
+        freq_dist = Counter(ngrams)
+        most_common = freq_dist.most_common(top)
+        return str(most_common)
+    
+    _langchain_tools = [
+        get_morphology,
+        get_part_of_speech,
+        get_named_entities,
+        get_most_frequent_ngrams
+    ]
+
+def get_agent():
+    """Get or initialize the langchain agent."""
+    global _agent
+    
+    if not LANGCHAIN_AVAILABLE:
+        return None
+    
+    if _agent is None:
+        try:
+            # Initialize model - try AWS Bedrock first, fallback to other providers
+            model_provider = os.getenv('MODEL_PROVIDER', 'bedrock_converse')
+            model_id = os.getenv('MODEL_ID', 'openai.gpt-oss-120b-1:0')
+            aws_profile = os.getenv('AWS_PROFILE', 'atn-developer')
+            temperature = float(os.getenv('TEMPERATURE', '0.2'))
+            max_tokens = int(os.getenv('MAX_TOKENS', '128000'))
+            
+            model = init_chat_model(
+                model_id,
+                model_provider=model_provider,
+                credentials_profile_name=aws_profile,
+                max_tokens=max_tokens,
+                temperature=temperature
+            )
+            
+            # Create agent
+            _agent = create_agent(
+                model=model,
+                tools=_langchain_tools,
+                system_prompt="You are a helpful assistant specializing in corpus linguistics analysis. "
+                             "Your job is to provide information based on user queries using tools provided to facilitate "
+                             "AI-assisted Corpus Linguistics keyword in context (KWIC) concordance data analysis. "
+                             "Be concise and always use and trust the tools provided to get accurate information. "
+                             "Never suggest information that is not based on tool outputs. "
+                             "Focus on analyzing the morphological and linguistic features of keywords in their context."
+            )
+            
+            print("✅ Langchain agent initialized successfully")
+        except Exception as e:
+            print(f"⚠️ Error initializing langchain agent: {e}")
+            return None
+    
+    return _agent
 
 def get_available_files():
     """Get list of JSON files in exports directory, sorted alphanumerically."""
@@ -534,6 +647,77 @@ def api_spacy_analysis():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/agent_analysis', methods=['POST'])
+def api_agent_analysis():
+    """API endpoint to get AI agent morphological analysis of keyword."""
+    if not LANGCHAIN_AVAILABLE:
+        return jsonify({
+            'success': False, 
+            'error': 'Langchain not available. Please install: pip install langchain langchain-aws'
+        }), 503
+    
+    data = request.json
+    context_text = data.get('context', '')
+    keyword = data.get('keyword', '')
+    
+    if not context_text:
+        return jsonify({'success': False, 'error': 'No context text provided'}), 400
+    
+    # Remove markdown bold markers and normalize punctuation
+    clean_text = normalize_punctuation(context_text.replace('**', ''))
+    
+    try:
+        agent = get_agent()
+        
+        if agent is None:
+            return jsonify({
+                'success': False,
+                'error': 'Agent initialization failed. Check AWS credentials and model configuration.'
+            }), 500
+        
+        # Construct query for agent
+        if keyword:
+            query_text = f"Please provide a morphological analysis of what the speaker means by the phrase '{keyword}' in the full context of the following concordance data='{clean_text}'"
+        else:
+            query_text = f"Please provide a morphological analysis of what the speaker means in the full context of the following concordance data: {clean_text}"
+        
+        # Invoke agent
+        result = agent.invoke({
+            "messages": [{"role": "user", "content": query_text}]
+        })
+        
+        # Extract the final text response from agent
+        final_message = result['messages'][-1]
+        
+        # Handle different response formats
+        if hasattr(final_message, 'content'):
+            if isinstance(final_message.content, list):
+                # Find text content in list
+                text_response = None
+                for item in final_message.content:
+                    if isinstance(item, dict) and 'text' in item:
+                        text_response = item['text']
+                        break
+                
+                if text_response is None:
+                    text_response = str(final_message.content)
+            else:
+                text_response = final_message.content
+        else:
+            text_response = str(final_message)
+        
+        return jsonify({
+            'success': True,
+            'analysis': text_response,
+            'keyword': keyword
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f"Agent analysis failed: {str(e)}"
+        }), 500
 
 @app.route('/analysis')
 def analysis():
