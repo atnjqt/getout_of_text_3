@@ -1,0 +1,207 @@
+{% include 'header.html' %}
+
+<style>
+    .help-section {
+        margin-bottom: 40px;
+    }
+    
+    .help-section h2 {
+        color: var(--text-primary);
+        font-size: 1.8em;
+        margin-bottom: 15px;
+        border-bottom: 2px solid var(--border-primary);
+        padding-bottom: 10px;
+    }
+    
+    .help-item {
+        background: var(--card-bg);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-primary);
+        transition: all 0.3s ease;
+    }
+    
+    .help-item:hover {
+        border-color: #0071e3;
+        box-shadow: 0 2px 8px var(--shadow-color);
+    }
+    
+    .help-item h3 {
+        color: var(--text-primary);
+        font-size: 1.3em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .help-item .icon {
+        font-size: 1.5em;
+    }
+    
+    .help-item p {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+    
+    .help-item .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85em;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+    
+    .badge-core {
+        background: #34c759;
+        color: white;
+    }
+    
+    .badge-analysis {
+        background: #8e44ad;
+        color: white;
+    }
+    
+    .badge-prototype {
+        background: #ff9500;
+        color: white;
+    }
+    
+    .badge-utility {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .intro {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 40px;
+        text-align: center;
+    }
+    
+    .intro h1 {
+        color: white;
+        font-size: 2.5em;
+        margin-bottom: 15px;
+    }
+    
+    .intro p {
+        font-size: 1.2em;
+        opacity: 0.95;
+    }
+</style>
+
+<div class="intro">
+    <h1>📚 KWIC Annotation Tool - Help Guide</h1>
+    <p>A comprehensive prototype corpus linguistics platform for keyword-in-context analysis</p>
+</div>
+
+<div class="help-section">
+    <h2>Core Annotation Tools</h2>
+    
+    <div class="help-item">
+        <h3><span class="icon">🕵</span> Annotator</h3>
+        <p>The main annotation interface for analyzing keywords in context (KWIC). Load concordance data, view keywords with surrounding context, and manually classify instances as literal, figurative, neither, or unclear. Includes SpaCy morphological analysis tools.</p>
+        <span class="badge badge-core">Core Tool</span>
+    </div>
+    
+    <div class="help-item">
+        <h3><span class="icon">📋</span> Concordance</h3>
+        <p>Display and export KWIC concordance lines. View all keyword instances in a clean, sortable table format. Useful for reviewing annotated data and exporting results for external analysis.</p>
+        <span class="badge badge-core">Core Tool</span>
+    </div>
+</div>
+
+<div class="help-section">
+    <h2>AI-Powered Analysis (Prototypes)</h2>
+    
+    <div class="help-item">
+        <h3><span class="icon">🤖</span> AI Summary</h3>
+        <p><strong>Experimental prototype</strong> exploring AI LLM integration for automated KWIC analysis. Uses language models to generate summaries and insights from annotated corpus data. This is a research prototype testing the feasibility of AI-assisted corpus linguistics workflows.</p>
+        <span class="badge badge-prototype">AI Prototype</span>
+    </div>
+    
+    <div class="help-item">
+        <h3><span class="icon">🧠</span> Embedding</h3>
+        <p><strong>Experimental prototype</strong> exploring semantic embedding analysis of keywords and contexts. Tests vector-based similarity measures and clustering using transformer models. Part of ongoing research into neural network applications in corpus linguistics.</p>
+        <span class="badge badge-prototype">AI Prototype</span>
+    </div>
+</div>
+
+<div class="help-section">
+    <h2>Linguistic Analysis Tools</h2>
+    
+    <div class="help-item">
+        <h3><span class="icon">🔬</span> Morphology</h3>
+        <p>Analyze morphological patterns in annotated keywords. View part-of-speech distributions, lemma variations, and morphological features across different classification categories (literal vs. figurative usage).</p>
+        <span class="badge badge-analysis">Analysis</span>
+    </div>
+    
+    <div class="help-item">
+        <h3><span class="icon">🏷️</span> POS (Part-of-Speech)</h3>
+        <p>Detailed part-of-speech analysis showing grammatical category distributions. Compare POS patterns between literal and figurative uses, or analyze across all classifications. Includes visualization and statistical breakdowns.</p>
+        <span class="badge badge-analysis">Analysis</span>
+    </div>
+    
+    <div class="help-item">
+        <h3><span class="icon">📝</span> N-grams</h3>
+        <p>Extract and analyze n-gram patterns (bigrams, trigrams, etc.) from annotated contexts. Discover common collocations and phraseological patterns associated with keywords. Filter by classification type and set minimum frequency thresholds.</p>
+        <span class="badge badge-analysis">Analysis</span>
+    </div>
+    
+    <div class="help-item">
+        <h3><span class="icon">🔍</span> Clustering</h3>
+        <p>POS-based clustering analysis using K-means algorithm. Group similar KWIC instances based on their syntactic patterns. Useful for discovering grammatical usage patterns and identifying outliers.</p>
+        <span class="badge badge-analysis">Analysis</span>
+    </div>
+    
+    <div class="help-item">
+        <h3><span class="icon">📈</span> Frequencies</h3>
+        <p>Genre-based frequency analysis showing distribution of classifications across different text types or corpora. Compare how literal vs. figurative usage varies by genre, register, or time period.</p>
+        <span class="badge badge-analysis">Analysis</span>
+    </div>
+    
+    <div class="help-item">
+        <h3><span class="icon">📊</span> Analysis</h3>
+        <p>General analysis dashboard providing overview statistics and visualizations for annotation projects. Aggregate metrics across multiple annotation files and export summary reports.</p>
+        <span class="badge badge-analysis">Analysis</span>
+    </div>
+</div>
+
+<div class="help-section">
+    <h2>Settings & Configuration</h2>
+    
+    <div class="help-item">
+        <h3><span class="icon">⚙️</span> Settings</h3>
+        <p>Configure application settings including corpus management, dark mode preferences, and other interface options. Add or remove corpus entries and customize the annotation environment.</p>
+        <span class="badge badge-utility">Utility</span>
+    </div>
+</div>
+
+<div class="help-section">
+    <h2>Workflow Overview</h2>
+    
+    <div class="help-item">
+        <h3>📝 Typical Workflow</h3>
+        <p><strong>1. Load Data:</strong> Upload or select KWIC concordance files in the Annotator</p>
+        <p><strong>2. Annotate:</strong> Review each keyword instance and classify as literal, figurative, neither, or unclear</p>
+        <p><strong>3. Analyze:</strong> Use linguistic analysis tools (Morphology, POS, N-grams, etc.) to explore patterns</p>
+        <p><strong>4. Visualize:</strong> Generate frequency distributions and clustering visualizations</p>
+        <p><strong>5. Export:</strong> Download annotations and analysis results via Concordance or Analysis pages</p>
+        <p><strong>6. Experiment (Optional):</strong> Test AI prototypes for automated analysis and insights</p>
+    </div>
+</div>
+
+<div style="margin-top: 50px; padding: 30px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-primary);">
+    <h2 style="color: var(--text-primary); margin-bottom: 15px;">💡 Research Note</h2>
+    <p style="color: var(--text-secondary); line-height: 1.8;">
+        The <strong>Annotator</strong>, <strong>AI Summary</strong>, and <strong>Embedding</strong> tools are exploratory prototypes investigating novel applications of large language models (LLMs) and neural network embeddings in corpus linguistics research. These features represent ongoing experiments in computational linguistics methodology and may be refined or expanded based on research findings.
+    </p>
+</div>
+
+{% include 'footer.html' %}

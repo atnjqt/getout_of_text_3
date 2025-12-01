@@ -1,0 +1,485 @@
+{% include 'header.html' %}
+
+<div class="container">
+    <h1>N-Gram Analysis</h1>
+    <p class="subtitle">Discover patterns in annotated concordance data by classification</p>
+
+    <div class="card">
+        <h2>Select File & Parameters</h2>
+        <div class="form-group">
+            <label for="fileSelect">Annotation File:</label>
+            <select id="fileSelect" class="form-control">
+                <option value="">-- Select a file --</option>
+                {% for file in files %}
+                <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="nValue">N-gram Size:</label>
+                <select id="nValue" class="form-control">
+                    <option value="1">Unigrams (1)</option>
+                    <option value="2" selected>Bigrams (2)</option>
+                    <option value="3">Trigrams (3)</option>
+                    <option value="4">4-grams</option>
+                    <option value="5">5-grams</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="minFreq">Minimum Frequency:</label>
+                <input type="number" id="minFreq" class="form-control" value="2" min="1" max="100">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Classifications to Include:</label>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" name="classification" value="literal" checked>
+                    Literal
+                </label>
+                <label>
+                    <input type="checkbox" name="classification" value="figurative" checked>
+                    Figurative
+                </label>
+                <label>
+                    <input type="checkbox" name="classification" value="neither" checked>
+                    Neither
+                </label>
+                <label>
+                    <input type="checkbox" name="classification" value="unclear" checked>
+                    Unclear
+                </label>
+            </div>
+        </div>
+
+        <button onclick="analyzeNgrams()" class="btn btn-primary" id="analyzeBtn">
+            Analyze N-grams
+        </button>
+    </div>
+
+    <div id="results" style="display: none;">
+        <div class="card">
+            <div class="collapsible-header" onclick="toggleSection('wordSection')">
+                <h2>Word N-grams</h2>
+                <span class="toggle-icon" id="wordToggle">▼</span>
+            </div>
+            <div id="wordSection" class="collapsible-content">
+                <p class="info-text">Based on surface forms (actual words as they appear)</p>
+                
+                <div class="classification-tabs" id="wordTabs">
+                    <button class="tab-btn active" onclick="showWordTab('literal')">Literal</button>
+                    <button class="tab-btn" onclick="showWordTab('figurative')">Figurative</button>
+                    <button class="tab-btn" onclick="showWordTab('neither')">Neither</button>
+                    <button class="tab-btn" onclick="showWordTab('unclear')">Unclear</button>
+                </div>
+
+                <div id="wordNgramsContainer"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="collapsible-header" onclick="toggleSection('lemmaSection')">
+                <h2>Lemma N-grams</h2>
+                <span class="toggle-icon" id="lemmaToggle">▼</span>
+            </div>
+            <div id="lemmaSection" class="collapsible-content">
+                <p class="info-text">Based on lemmatized forms (normalized base forms)</p>
+                
+                <div class="classification-tabs" id="lemmaTabs">
+                    <button class="tab-btn active" onclick="showLemmaTab('literal')">Literal</button>
+                    <button class="tab-btn" onclick="showLemmaTab('figurative')">Figurative</button>
+                    <button class="tab-btn" onclick="showLemmaTab('neither')">Neither</button>
+                    <button class="tab-btn" onclick="showLemmaTab('unclear')">Unclear</button>
+                </div>
+
+                <div id="lemmaNgramsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" style="display: none;" class="loading">
+        <p>Processing n-grams...</p>
+    </div>
+</div>
+
+<style>
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .checkbox-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .classification-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .tab-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 1rem;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+        color: #333;
+        background: #f5f5f5;
+    }
+
+    .tab-btn.active {
+        color: #2c5282;
+        border-bottom-color: #2c5282;
+        font-weight: 600;
+    }
+
+    .ngram-list {
+        display: none;
+    }
+
+    .ngram-list.active {
+        display: block;
+    }
+
+    .ngram-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .ngram-table th,
+    .ngram-table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .ngram-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .ngram-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .freq-bar {
+        height: 20px;
+        background: linear-gradient(90deg, #4299e1 0%, #63b3ed 100%);
+        border-radius: 3px;
+        min-width: 2px;
+    }
+
+    .freq-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-text {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        font-style: italic;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .stats-summary {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c5282;
+    }
+
+    .collapsible-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        padding: 5px 0;
+    }
+
+    .collapsible-header:hover {
+        opacity: 0.8;
+    }
+
+    .collapsible-header h2 {
+        margin: 0;
+    }
+
+    .toggle-icon {
+        font-size: 1.2rem;
+        color: #666;
+        transition: transform 0.3s ease;
+    }
+
+    .toggle-icon.collapsed {
+        transform: rotate(-90deg);
+    }
+
+    .collapsible-content {
+        max-height: 2000px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        opacity: 1;
+    }
+
+    .collapsible-content.collapsed {
+        max-height: 0;
+        opacity: 0;
+    }
+</style>
+
+<script>
+let currentWordData = {};
+let currentLemmaData = {};
+let currentWordTab = 'literal';
+let currentLemmaTab = 'literal';
+
+function analyzeNgrams() {
+    const fileSelect = document.getElementById('fileSelect');
+    const filename = fileSelect.value;
+    
+    if (!filename) {
+        alert('Please select a file');
+        return;
+    }
+
+    const nValue = document.getElementById('nValue').value;
+    const minFreq = document.getElementById('minFreq').value;
+    
+    const classificationCheckboxes = document.querySelectorAll('input[name="classification"]:checked');
+    const classifications = Array.from(classificationCheckboxes).map(cb => cb.value);
+    
+    if (classifications.length === 0) {
+        alert('Please select at least one classification');
+        return;
+    }
+
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = true;
+
+    fetch('/api/ngrams', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            kwic_filename: filename,
+            classifications: classifications,
+            n: nValue,
+            min_freq: minFreq
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        currentWordData = data.word_ngrams;
+        currentLemmaData = data.lemma_ngrams;
+        
+        displayResults(data);
+        
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to analyze n-grams');
+        document.getElementById('loading').style.display = 'none';
+    })
+    .finally(() => {
+        document.getElementById('analyzeBtn').disabled = false;
+    });
+}
+
+function displayResults(data) {
+    displayWordNgrams(data.word_ngrams);
+    displayLemmaNgrams(data.lemma_ngrams);
+}
+
+function displayWordNgrams(wordNgrams) {
+    const container = document.getElementById('wordNgramsContainer');
+    container.innerHTML = '';
+
+    for (const [classification, ngrams] of Object.entries(wordNgrams)) {
+        const listDiv = document.createElement('div');
+        listDiv.className = 'ngram-list' + (classification === currentWordTab ? ' active' : '');
+        listDiv.id = `word-${classification}`;
+        
+        if (ngrams.length === 0) {
+            listDiv.innerHTML = '<div class="no-results">No n-grams found for this classification</div>';
+        } else {
+            const maxCount = Math.max(...ngrams.map(([_, count]) => count));
+            
+            let html = '<table class="ngram-table">';
+            html += '<thead><tr><th>N-gram</th><th>Frequency</th><th style="width: 40%;">Distribution</th></tr></thead>';
+            html += '<tbody>';
+            
+            for (const [ngram, count] of ngrams) {
+                const barWidth = (count / maxCount) * 100;
+                html += `
+                    <tr>
+                        <td><strong>${ngram}</strong></td>
+                        <td>${count}</td>
+                        <td>
+                            <div class="freq-cell">
+                                <div class="freq-bar" style="width: ${barWidth}%"></div>
+                                <span>${count}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            html += '</tbody></table>';
+            listDiv.innerHTML = html;
+        }
+        
+        container.appendChild(listDiv);
+    }
+}
+
+function displayLemmaNgrams(lemmaNgrams) {
+    const container = document.getElementById('lemmaNgramsContainer');
+    container.innerHTML = '';
+
+    for (const [classification, ngrams] of Object.entries(lemmaNgrams)) {
+        const listDiv = document.createElement('div');
+        listDiv.className = 'ngram-list' + (classification === currentLemmaTab ? ' active' : '');
+        listDiv.id = `lemma-${classification}`;
+        
+        if (ngrams.length === 0) {
+            listDiv.innerHTML = '<div class="no-results">No n-grams found for this classification</div>';
+        } else {
+            const maxCount = Math.max(...ngrams.map(([_, count]) => count));
+            
+            let html = '<table class="ngram-table">';
+            html += '<thead><tr><th>N-gram</th><th>Frequency</th><th style="width: 40%;">Distribution</th></tr></thead>';
+            html += '<tbody>';
+            
+            for (const [ngram, count] of ngrams) {
+                const barWidth = (count / maxCount) * 100;
+                html += `
+                    <tr>
+                        <td><strong>${ngram}</strong></td>
+                        <td>${count}</td>
+                        <td>
+                            <div class="freq-cell">
+                                <div class="freq-bar" style="width: ${barWidth}%"></div>
+                                <span>${count}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            html += '</tbody></table>';
+            listDiv.innerHTML = html;
+        }
+        
+        container.appendChild(listDiv);
+    }
+}
+
+function showWordTab(classification) {
+    currentWordTab = classification;
+    
+    // Update tab buttons
+    const tabs = document.querySelectorAll('#wordTabs .tab-btn');
+    tabs.forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === classification);
+    });
+    
+    // Show/hide lists
+    document.querySelectorAll('#wordNgramsContainer .ngram-list').forEach(list => {
+        list.classList.toggle('active', list.id === `word-${classification}`);
+    });
+}
+
+function showLemmaTab(classification) {
+    currentLemmaTab = classification;
+    
+    // Update tab buttons
+    const tabs = document.querySelectorAll('#lemmaTabs .tab-btn');
+    tabs.forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === classification);
+    });
+    
+    // Show/hide lists
+    document.querySelectorAll('#lemmaNgramsContainer .ngram-list').forEach(list => {
+        list.classList.toggle('active', list.id === `lemma-${classification}`);
+    });
+}
+
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    const toggleIcon = document.getElementById(sectionId === 'wordSection' ? 'wordToggle' : 'lemmaToggle');
+    
+    section.classList.toggle('collapsed');
+    toggleIcon.classList.toggle('collapsed');
+}
+</script>
+
+{% include 'footer.html' %}

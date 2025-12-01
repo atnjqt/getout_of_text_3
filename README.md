@@ -1,29 +1,85 @@
-# getout_of_text3: Enhanced Legal Text Analysis Toolkit
+# getout-of-text-3: A Python Toolkit for Legal Text Analysis and Open Science in Corpus Linguistics
 
-The `getout_of_text3` module is a comprehensive Python library promoting open and reproducible computational forensic linguistics toolsets for data scientists and legal scholars performing textual analysis with popular corpora such as **COCA** ([Corpus of Contemporary American English](https://www.english-corpora.org/coca/)), **SCOTUS** [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/), and other legal / natural language text corpora.
+- Version: **0.4.10** ([pypi.org/project/getout-of-text-3/](https://pypi.org/project/getout-of-text-3/))
+- License: [MIT License](LICENSE.md)
+- Authors: 
+    - [Etienne P Jacquot](mailto:etiennej@upenn.edu) (`@atnjqt`)
+    - [Matthew B O'Donnell](mailto:odmatt@upenn.edu) (`@mbod`)
 
+## Introduction
+
+The `getout_of_text3` module is a prototypical Python library promoting transparent and reproducible legal Corpus Linguistics research by leveraging traditional NLP tools alongside AI implementions using embedding models and large language models. The projects consists of two prototypical components for querying and analyzing corpus query data:
+
+1. **Installable library** named `getout_of_text3` which provides tools for local offline corpus management and querying local corpora text data.
+
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
+    pip install getout-of-text-3 -U
+    ```
+
+2. **Runnable web application** named `annotator app` which provides a user interface for annotation of concordance data and subsequent analysis using embedding models and large language models, along with traditional NLP techniques.
+
+    ```bash
+    cd annotator_app/
+    python3 -m venv .venv
+    source .venv/bin/activate
+    python3 app.py
+    ```
+    - or run with Docker
+
+    ```bash
+    cd annotator_app
+
+    docker build -t annotator_app:latest .
+
+    docker run -p 5001:5001 \
+    -v $(pwd)/data:/data \
+    -v $(pwd)/exports:/exports \
+    -v $(pwd)/annotator_app/annotations:/app/annotations \
+    -v ~/.aws:/root/.aws \
+    annotator_app:latest 
+    ```
+
+3. **Corpus folder** for offline text files saved in a local [data](./data/) directory:
+    - **Enligh-Corpora**: 
+        - `data/english-corpora/coca` for [Corpus of Contemporary American English](https://www.english-corpora.org/coca/)
+        - `data/english-corpora/glowbe` for [Corpus of Global Web-Based English](https://www.english-corpora.org/glowbe)
+    - **Sketch-Engine**: 
+        - `data/sketch-engine/eec` for [EcoLexicon English Corpus](https://www.sketchengine.eu/ecolexicon-corpus/)
+    - **DIY Corpus Collections**:
+        - `data/loc.gov/scotus` for [Library of Congress US Report Collection](https://www.loc.gov/collections/united-states-reports/)
 
 ## Table of Contents
 
 - [Overview](#overview)
-    - [Key Features for Legal & Linguistic Scholars](#-features-for-legal--linguistic-scholars)
+    - [Key Features for Legal & Linguistic Scholars](#key-features-for-legal--linguistic-scholars)
 - [Getting Started](#getting-started)
     - [Installation](#installation)
     - [Corpus of Contemporary American English (COCA)](#corpus-of-contemporary-american-english-coca)
         - [Genres & Years](#genres--years)
         - [Read the Dataset](#read-the-dataset)
-        - [Search for Keyword in Context](#search-the-corpus-for-a-keyword)
-        - [Search for Keyword Distribution across Genres](#Search-for-Keyword-Distribution-across-Genres)
+        - [Search for Keyword in Context](#search-for-keyword-in-context)
+        - [Search for Keyword Distribution across Genres](#search-for-keyword-distribution-across-genres)
+- [NLP](#nlp)
+    - [Text Preprocessing](#text-preprocessing)
+- [AI Agents](#ai-agents)
+    - [Langchain & AWS Bedrock](#langchain--aws-bedrock)
+- [Embedding Models](#embedding-models)
     - [Legal Bert Text Masking](#legal-bert-text-masking)
     - [EmbeddingGemma Document Similarity & Context Ranking](#embeddinggemma-document-similarity--context-ranking)
 - [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Citation](#citation)
 - [Support](#support)
+- [Acknowledgements](#acknowledgements)
 
 ## Overview
 
 The `got3` module aims to provide simpler toolsets to promote the discovery of the *'ordinary meaning'* of words in and out of legal contexts using computational techniques, with a focus on delivering an open-source tool built around three main areas of functionality:
 
-### 🎯 Key Features for Legal & Linguistic Scholars
+### Key Features for Legal & Linguistic Scholars
 
 - 📚 **Corpus Linguistics**: Read and manage COCA corpus files across multiple genres
     - 🕵 **Keyword Search**: Find terms with contextual information across legal texts
@@ -40,16 +96,6 @@ The `got3` module aims to provide simpler toolsets to promote the discovery of t
 
 
 ## Getting Started
-
-### Installation
-
-You can install `getout_of_text3` using pip. I recommend setting up a virtual environment using [venv](https://docs.python.org/3/library/venv.html) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) to manage dependencies.
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate  # On Windows use `.venv\Scripts\activate
-pip install getout-of-text-3 -U
-```
 
 The below examples demonstrate how to use the `getout_of_text3` module for various tasks using corpus linguistics tools, embedding models, and AI language models.
 
@@ -149,7 +195,46 @@ time elapsed: 0 days 00:00:35.216885
 
 ______________________
 
-______________________
+## NLP
+
+### Text Preprocessing
+
+KWIC, Collocates, Frequency Analysis, etc.
+
+## AI Agents
+
+### Langchain & AWS Bedrock
+
+`getout_of_text3` can provide filtered results to pass to AI agents for further analysis, summarization, or technical steps in a toolchain. TBD as I've not yet implemented this in the toolset but examples are provided in `examples/ai/demo.ipynb` reference provided.
+
+> 🚨 This requires an AWS `named_profile` and will incur marginal costs! TBD on future versions supporting AI agents beyond AWS Bedrock.
+
+
+```python
+import pandas as pd
+import getout_of_text_3 as got3
+from getout_of_text_3 import ScotusAnalysisTool, ScotusFilteredAnalysisTool
+from langchain.chat_models import init_chat_model
+
+model = init_chat_model(
+    "openai.gpt-oss-120b-1:0",
+    model_provider="bedrock_converse",
+    credentials_profile_name="atn-developer",
+    max_tokens=128000
+)
+# Assume you built db_dict_formatted (volume -> DataFrame with columns ['case_id','text'])
+search_tool = ScotusAnalysisTool(model=model, db_dict_formatted=db_dict_formatted)
+filtered_tool = ScotusFilteredAnalysisTool(model=model)
+
+# Quick term filter & summarization
+text_result = search_tool._run(keyword="bank", 
+                               analysis_focus="general")
+```
+
+![alt text](img/ai_agent_example_bank.png)
+
+## Embedding Models
+
 ### Legal Bert Text Masking
 
 `getout_of_text3` provides a convenient interface to use these models for masked word prediction and other embedding tasks, namely using `got3.embedding.legal_bert.pipe()` function, `nlpaueb/legal-bert-base-uncased`, which is specifically trained on legal documents and is the most popular taged 'legal' on Hugging Face (https://huggingface.co/nlpaueb/legal-bert-base-uncased).
@@ -243,7 +328,7 @@ We welcome contributions from legal scholars and developers! Please see our cont
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
 
 ## Citation
 

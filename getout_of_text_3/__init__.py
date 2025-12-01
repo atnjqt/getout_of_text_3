@@ -32,15 +32,56 @@ Advancing legal scholarship through open computational tools! ⚖️
 from getout_of_text_3._config import options
 from getout_of_text_3.corpus import LegalCorpus
 
-def read_corpus(dir_of_text_files=None):
+# Import AI tools with graceful handling of missing dependencies
+try:
+    from getout_of_text_3.ai_agents import (
+        ScotusAnalysisTool,
+        ScotusFilteredAnalysisTool,
+        ScotusAnalysisInput,
+        ScotusFilteredAnalysisInput,
+    )
+except ImportError:
+    # Gracefully handle missing LangChain dependency
+    ScotusAnalysisTool = None
+    ScotusFilteredAnalysisTool = None
+    ScotusAnalysisInput = None
+    ScotusFilteredAnalysisInput = None
+
+# Import WikiMedia tools from agents.bedrock
+try:
+    from getout_of_text_3.agents.bedrock import (
+        WikimediaMultiLangAnalysisTool,
+        WikimediaAnalysisInput,
+    )
+except ImportError:
+    # Gracefully handle missing dependencies
+    WikimediaMultiLangAnalysisTool = None
+    WikimediaAnalysisInput = None
+
+def read_corpus(dir_of_text_files=None, corpus_name='coca'):
     """
-    Convenience function to read COCA corpus files.
-    Creates a temporary LegalCorpus instance and loads the data.
+    Convenience function to read corpus files with explicit corpus type specification.
     
-    Returns the loaded corpus dictionary.
+    Parameters:
+        dir_of_text_files (str): Path to corpus directory
+        corpus_name (str): Corpus type - 'coca' (default), 'glowbe', or 'diy'
+    
+    Returns:
+        dict: Nested corpus structure (both formats use same pattern):
+            - 'coca'/'diy': {genre: {year_or_id: DataFrame}}
+            - 'glowbe': {country_code: {file_id: DataFrame}}
+    
+    Examples:
+        >>> coca = read_corpus('data/coca/', corpus_name='coca')
+        >>> coca['blog']['27']  # Access specific genre and year/id
+        >>> 
+        >>> glowbe = read_corpus('data/glowbe/', corpus_name='glowbe')
+        >>> glowbe['us']['g19']  # Access specific country and file_id
+        >>> 
+        >>> custom = read_corpus('data/my_corpus/', corpus_name='diy')
     """
     corpus = LegalCorpus()
-    return corpus.read_corpus(dir_of_text_files)
+    return corpus.read_corpus(dir_of_text_files, corpus_name=corpus_name)
 
 # Expose main functions for easy access
 def read_corpora(dir_of_text_files, corpora_name, genre_list=None):
@@ -121,6 +162,12 @@ __all__ = [
     'keyword_frequency_analysis',
     'embedding',
     'options',
+    'ScotusAnalysisTool',
+    'ScotusFilteredAnalysisTool',
+    'ScotusAnalysisInput',
+    'ScotusFilteredAnalysisInput',
+    'WikimediaMultiLangAnalysisTool',
+    'WikimediaAnalysisInput',
     '__version__'
 ]
 

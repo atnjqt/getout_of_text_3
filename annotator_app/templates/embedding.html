@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Embedding Analysis - KWIC Annotator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .results-table {
+            margin-top: 30px;
+        }
+        .score-badge {
+            font-size: 0.9rem;
+            padding: 0.35rem 0.65rem;
+        }
+        .context-cell {
+            max-width: 500px;
+            word-wrap: break-word;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .classification-badge {
+            font-size: 0.85rem;
+        }
+        
+        /* Dark mode support */
+        body[data-theme="dark"] .card {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-primary);
+        }
+        
+        body[data-theme="dark"] .card-body {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .card-title {
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .text-muted {
+            color: var(--text-secondary) !important;
+        }
+        
+        body[data-theme="dark"] .form-label {
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .form-control,
+        body[data-theme="dark"] .form-select {
+            background-color: var(--input-bg);
+            border-color: var(--border-secondary);
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .form-control:focus,
+        body[data-theme="dark"] .form-select:focus {
+            background-color: var(--input-bg);
+            border-color: #0071e3;
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .table {
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .table-dark {
+            background-color: var(--bg-quaternary);
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--bg-tertiary);
+        }
+        
+        body[data-theme="dark"] .table-hover tbody tr:hover {
+            background-color: var(--hover-bg);
+        }
+        
+        body[data-theme="dark"] code {
+            background-color: var(--bg-quaternary);
+            color: var(--text-primary);
+        }
+        
+        body[data-theme="dark"] small {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    {% include 'header.html' %}
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-project-diagram"></i> Semantic Embedding Analysis
+                </h1>
+                <p class="text-muted">
+                    Use sentence embeddings to find the most relevant annotated contexts based on your query.
+                </p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Configuration</h5>
+                        
+                        <div class="mb-3">
+                            <label for="fileSelect" class="form-label">
+                                <i class="fas fa-file-alt"></i> Annotation File
+                            </label>
+                            <select id="fileSelect" class="form-select">
+                                <option value="">Select an annotation file...</option>
+                                {% for file in files %}
+                                <option value="{{ file }}">{{ file }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modelInput" class="form-label">
+                                <i class="fas fa-brain"></i> Embedding Model
+                            </label>
+                            <input type="text" 
+                                   id="modelInput" 
+                                   class="form-control" 
+                                   value="google/embeddinggemma-300m"
+                                   placeholder="e.g., google/embeddinggemma-300m">
+                            <small class="form-text text-muted">
+                                Enter a SentenceTransformer model name from Hugging Face
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="queryInput" class="form-label">
+                                <i class="fas fa-search"></i> Query
+                            </label>
+                            <textarea id="queryInput" 
+                                      class="form-control" 
+                                      rows="3" 
+                                      placeholder="Enter your query, e.g., 'should we read the phrase best system narrowly or broadly, in ordinary meaning?'"></textarea>
+                        </div>
+
+                        <button id="runButton" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Run Analysis
+                        </button>
+
+                        <div id="loading" class="loading">
+                            <i class="fas fa-spinner"></i>
+                            <p>Processing embeddings...</p>
+                        </div>
+
+                        <div id="error" class="alert alert-danger mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsContainer" style="display: none;">
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-chart-bar"></i> Results
+                            </h5>
+                            <div id="resultsInfo" class="mb-3"></div>
+                            
+                            <div class="table-responsive results-table">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Score</th>
+                                            <th>Genre</th>
+                                            <th>Text ID</th>
+                                            <th>Classification</th>
+                                            <th>Context</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resultsTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const fileSelect = document.getElementById('fileSelect');
+        const modelInput = document.getElementById('modelInput');
+        const queryInput = document.getElementById('queryInput');
+        const runButton = document.getElementById('runButton');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsInfo = document.getElementById('resultsInfo');
+        const resultsTableBody = document.getElementById('resultsTableBody');
+
+        runButton.addEventListener('click', async () => {
+            const filename = fileSelect.value;
+            const model = modelInput.value;
+            const query = queryInput.value;
+
+            // Validate inputs
+            if (!filename) {
+                showError('Please select an annotation file');
+                return;
+            }
+
+            if (!model) {
+                showError('Please enter a model name');
+                return;
+            }
+
+            if (!query) {
+                showError('Please enter a query');
+                return;
+            }
+
+            // Hide previous results and errors
+            errorDiv.style.display = 'none';
+            resultsContainer.style.display = 'none';
+            loading.style.display = 'block';
+            runButton.disabled = true;
+
+            try {
+                const response = await fetch('/api/embedding', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: filename,
+                        model: model,
+                        query: query
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Analysis failed');
+                }
+
+                displayResults(data);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                loading.style.display = 'none';
+                runButton.disabled = false;
+            }
+        });
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function displayResults(data) {
+            // Show results info
+            resultsInfo.innerHTML = `
+                <p><strong>Query:</strong> ${escapeHtml(data.query)}</p>
+                <p><strong>Model:</strong> ${escapeHtml(data.model)}</p>
+                <p><strong>Total Documents:</strong> ${data.total_documents}</p>
+            `;
+
+            // Populate table
+            resultsTableBody.innerHTML = '';
+            data.results.forEach(result => {
+                const row = document.createElement('tr');
+                
+                // Score badge color based on value
+                let badgeClass = 'bg-secondary';
+                if (result.score > 0.7) badgeClass = 'bg-success';
+                else if (result.score > 0.5) badgeClass = 'bg-info';
+                else if (result.score > 0.3) badgeClass = 'bg-warning';
+
+                // Classification badge color
+                let classificationBadge = '';
+                if (result.classification) {
+                    let classBadge = 'secondary';
+                    if (result.classification === 'literal') classBadge = 'primary';
+                    else if (result.classification === 'figurative') classBadge = 'success';
+                    else if (result.classification === 'neither') classBadge = 'warning';
+                    else if (result.classification === 'unclear') classBadge = 'secondary';
+                    
+                    classificationBadge = `<span class="badge bg-${classBadge} classification-badge">${result.classification}</span>`;
+                }
+
+                row.innerHTML = `
+                    <td>${result.rank}</td>
+                    <td><span class="badge score-badge ${badgeClass}">${result.score.toFixed(4)}</span></td>
+                    <td><code>${escapeHtml(result.genre)}</code></td>
+                    <td><small>${escapeHtml(result.text_id)}</small></td>
+                    <td>${classificationBadge}</td>
+                    <td class="context-cell">${escapeHtml(result.context)}</td>
+                    <td><small>${escapeHtml(result.notes || '')}</small></td>
+                `;
+                
+                resultsTableBody.appendChild(row);
+            });
+
+            resultsContainer.style.display = 'block';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

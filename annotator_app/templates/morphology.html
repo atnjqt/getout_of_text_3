@@ -1,0 +1,296 @@
+{% include 'header.html' %}
+
+<style>
+            transition: all 0.2s;
+        }
+        
+        .back-link:hover {
+            background: #0077ed;
+            transform: translateY(-1px);
+        }
+        
+        .controls {
+            margin-bottom: 30px;
+        }
+        
+        select {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e5e7;
+        }
+        
+        .classification-section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #e5e5e7;
+        }
+        
+        .classification-section.literal {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .classification-section.figurative {
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.05) 0%, rgba(245, 87, 108, 0.05) 100%);
+            border-color: rgba(240, 147, 251, 0.3);
+        }
+        
+        .classification-section.neither {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.05) 0%, rgba(0, 242, 254, 0.05) 100%);
+            border-color: rgba(79, 172, 254, 0.3);
+        }
+        
+        .classification-section.unclear {
+            background: linear-gradient(135deg, rgba(67, 233, 123, 0.05) 0%, rgba(56, 249, 215, 0.05) 100%);
+            border-color: rgba(67, 233, 123, 0.3);
+        }
+        
+        .classification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .classification-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .classification-count {
+            font-size: 1.2em;
+            color: #6e6e73;
+        }
+        
+        .tables-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        
+        .table-wrapper {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .table-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .pos-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .pos-table th {
+            background: #f5f5f7;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #d2d2d7;
+        }
+        
+        .pos-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e5e7;
+        }
+        
+        .pos-table tr:hover {
+            background: #f5f9ff;
+        }
+        
+        .pos-tag {
+            font-weight: 700;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+        
+        .pos-count {
+            text-align: right;
+            font-weight: 600;
+            color: #0071e3;
+        }
+        
+        .pos-bar {
+            height: 6px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6e6e73;
+            font-size: 1.1em;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6e6e73;
+        }
+        
+        .model-info {
+            font-size: 0.9em;
+            color: #6e6e73;
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Morphological Pattern Analysis</h1>
+        
+        <div class="controls">
+            <select id="fileSelect">
+                <option value="">Select an annotation file...</option>
+                {% for file in files %}
+                <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div id="content">
+            <div class="no-data">
+                👆 Select an annotation file to analyze POS patterns
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const fileSelect = document.getElementById('fileSelect');
+        const content = document.getElementById('content');
+        
+        fileSelect.addEventListener('change', loadMorphology);
+        
+        async function loadMorphology() {
+            const filename = fileSelect.value;
+            if (!filename) return;
+            
+            content.innerHTML = '<div class="loading">⏳ Analyzing morphological patterns...</div>';
+            
+            try {
+                const response = await fetch(`/api/morphology/${filename}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    content.innerHTML = `<div class="no-data">❌ Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                renderMorphology(data);
+                
+            } catch (error) {
+                content.innerHTML = `<div class="no-data">❌ Error loading analysis: ${error.message}</div>`;
+            }
+        }
+        
+        function renderMorphology(data) {
+            const { results, model } = data;
+            
+            let html = `<div class="model-info">Using spaCy model: ${model}</div>`;
+            
+            const classifications = ['literal', 'figurative', 'neither', 'unclear'];
+            const classColors = {
+                literal: '#667eea',
+                figurative: '#f5576c',
+                neither: '#4facfe',
+                unclear: '#43e97b'
+            };
+            
+            for (const classification of classifications) {
+                const classData = results[classification];
+                
+                if (classData.count === 0) {
+                    continue;
+                }
+                
+                html += `
+                    <div class="classification-section ${classification}">
+                        <div class="classification-header">
+                            <div class="classification-title">${classification}</div>
+                            <div class="classification-count">${classData.count} annotations</div>
+                        </div>
+                        
+                        <div class="tables-container">
+                            <div class="table-wrapper">
+                                <div class="table-title">Pre-Modifiers (Before Keyword)</div>
+                                ${createPOSTable(classData.pre, classColors[classification])}
+                            </div>
+                            
+                            <div class="table-wrapper">
+                                <div class="table-title">Post-Modifiers (After Keyword)</div>
+                                ${createPOSTable(classData.post, classColors[classification])}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = html;
+        }
+        
+        function createPOSTable(posData, color) {
+            if (posData.length === 0) {
+                return '<div style="text-align: center; padding: 20px; color: #6e6e73;">No data</div>';
+            }
+            
+            const maxCount = posData[0][1];
+            
+            let html = `
+                <table class="pos-table">
+                    <thead>
+                        <tr>
+                            <th>POS Tag</th>
+                            <th style="text-align: right;">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            posData.forEach(([pos, count]) => {
+                const percentage = (count / maxCount) * 100;
+                html += `
+                    <tr>
+                        <td>
+                            <div class="pos-tag">${pos}</div>
+                            <div class="pos-bar" style="width: ${percentage}%; background: linear-gradient(90deg, ${color} 0%, ${color}88 100%);"></div>
+                        </td>
+                        <td class="pos-count">${count}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            return html;
+        }
+    </script>
+
+{% include 'footer.html' %}

@@ -1,0 +1,279 @@
+{% include 'header.html' %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-card.literal {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .stat-card.figurative {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-card.neither {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .stat-card.unclear {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .stat-card.total {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .stat-percentage {
+            font-size: 1em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #e5e5e7;
+            margin-bottom: 30px;
+        }
+        
+        .chart-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6e6e73;
+            font-size: 1.1em;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6e6e73;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Annotation Analysis</h1>
+        
+        <div class="controls">
+            <select id="fileSelect">
+                <option value="">Select an annotation file...</option>
+                {% for file in files %}
+                <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div id="content">
+            <div class="no-data">
+                👆 Select an annotation file to view analysis
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentChart = null;
+        
+        const fileSelect = document.getElementById('fileSelect');
+        const content = document.getElementById('content');
+        
+        fileSelect.addEventListener('change', loadAnalysis);
+        
+        async function loadAnalysis() {
+            const filename = fileSelect.value;
+            if (!filename) return;
+            
+            content.innerHTML = '<div class="loading">⏳ Loading analysis...</div>';
+            
+            try {
+                const response = await fetch(`/api/analysis/${filename}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    content.innerHTML = `<div class="no-data">❌ Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                renderAnalysis(data);
+                
+            } catch (error) {
+                content.innerHTML = `<div class="no-data">❌ Error loading analysis: ${error.message}</div>`;
+            }
+        }
+        
+        function renderAnalysis(data) {
+            const { classification_counts, percentages, total_annotations } = data;
+            
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <div class="stat-label">Total Annotations</div>
+                        <div class="stat-value">${total_annotations}</div>
+                    </div>
+                    <div class="stat-card literal">
+                        <div class="stat-label">Literal</div>
+                        <div class="stat-value">${classification_counts.literal}</div>
+                        <div class="stat-percentage">${percentages.literal}%</div>
+                    </div>
+                    <div class="stat-card figurative">
+                        <div class="stat-label">Figurative</div>
+                        <div class="stat-value">${classification_counts.figurative}</div>
+                        <div class="stat-percentage">${percentages.figurative}%</div>
+                    </div>
+                    <div class="stat-card neither">
+                        <div class="stat-label">Neither</div>
+                        <div class="stat-value">${classification_counts.neither}</div>
+                        <div class="stat-percentage">${percentages.neither}%</div>
+                    </div>
+                    <div class="stat-card unclear">
+                        <div class="stat-label">Unclear</div>
+                        <div class="stat-value">${classification_counts.unclear}</div>
+                        <div class="stat-percentage">${percentages.unclear}%</div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-title">Classification Distribution</div>
+                    <div class="chart-wrapper">
+                        <canvas id="classificationChart"></canvas>
+                    </div>
+                </div>
+            `;
+            
+            createBarChart(classification_counts);
+        }
+        
+        function createBarChart(counts) {
+            const ctx = document.getElementById('classificationChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Literal', 'Figurative', 'Neither', 'Unclear'],
+                    datasets: [{
+                        label: 'Number of Annotations',
+                        data: [
+                            counts.literal,
+                            counts.figurative,
+                            counts.neither,
+                            counts.unclear
+                        ],
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(79, 172, 254, 0.8)',
+                            'rgba(67, 233, 123, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(240, 147, 251, 1)',
+                            'rgba(79, 172, 254, 1)',
+                            'rgba(67, 233, 123, 1)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const total = counts.literal + counts.figurative + counts.neither + counts.unclear;
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `Count: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                stepSize: 1
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 13,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+
+{% include 'footer.html' %}

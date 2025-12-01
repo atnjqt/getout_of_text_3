@@ -1,0 +1,675 @@
+{% include 'header.html' %}
+
+<style>
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+        
+        select:hover {
+            border-color: #667eea;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .back-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .stat-card .count {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .literal-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .figurative-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .neither-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .unclear-card {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .classification-section {
+            margin-bottom: 40px;
+        }
+        
+        .classification-header {
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .classification-header:hover {
+            opacity: 0.9;
+        }
+        
+        .classification-header .toggle {
+            font-size: 1.5rem;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .token-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+        
+        .token-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .token-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .token-table th:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .token-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .token-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .token-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .total-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Part-of-Speech Analysis</h1>
+        <p class="subtitle">Detailed token-level morphological analysis by classification</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileSelect">Select Annotation File:</label>
+                <select id="fileSelect">
+                    <option value="">-- Select a file --</option>
+                    {% for file in files %}
+                    <option value="{{ file }}">{{ file }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="analysisMode">Analysis Mode:</label>
+                <select id="analysisMode">
+                    <option value="by_classification">By Classification</option>
+                    <option value="across_all">Across All Values</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="classificationFilterGroup">
+                <label for="classificationFilter">Filter by Classification:</label>
+                <select id="classificationFilter">
+                    <option value="all">All Classifications</option>
+                    <option value="literal">Literal</option>
+                    <option value="figurative">Figurative</option>
+                    <option value="neither">Neither</option>
+                    <option value="unclear">Unclear</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="statsContainer" class="stats-cards hidden"></div>
+        
+        <div id="loading" class="loading hidden">Loading analysis...</div>
+        <div id="error" class="error hidden"></div>
+        <div id="content"></div>
+    </div>
+    
+    <script>
+        let currentData = null;
+        
+        document.getElementById('fileSelect').addEventListener('change', function() {
+            const filename = this.value;
+            if (filename) {
+                loadAnalysis(filename);
+            }
+        });
+        
+        document.getElementById('analysisMode').addEventListener('change', function() {
+            const filename = document.getElementById('fileSelect').value;
+            const filterGroup = document.getElementById('classificationFilterGroup');
+            
+            if (this.value === 'across_all') {
+                filterGroup.style.display = 'none';
+            } else {
+                filterGroup.style.display = 'flex';
+            }
+            
+            if (filename) {
+                loadAnalysis(filename);
+            }
+        });
+        
+        document.getElementById('classificationFilter').addEventListener('change', function() {
+            if (currentData) {
+                renderAnalysis(currentData);
+            }
+        });
+        
+        function loadAnalysis(filename) {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const content = document.getElementById('content');
+            const statsContainer = document.getElementById('statsContainer');
+            const analysisMode = document.getElementById('analysisMode').value;
+            const acrossAll = analysisMode === 'across_all';
+            
+            loading.classList.remove('hidden');
+            error.classList.add('hidden');
+            content.innerHTML = '';
+            statsContainer.classList.add('hidden');
+            
+            const url = `/api/part_of_speech/${filename}${acrossAll ? '?across_all=true' : ''}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    loading.classList.add('hidden');
+                    if (data.error) {
+                        error.textContent = data.error;
+                        error.classList.remove('hidden');
+                    } else {
+                        currentData = data;
+                        renderStats(data);
+                        renderAnalysis(data);
+                    }
+                })
+                .catch(err => {
+                    loading.classList.add('hidden');
+                    error.textContent = 'Failed to load analysis: ' + err.message;
+                    error.classList.remove('hidden');
+                });
+        }
+        
+        function renderStats(data) {
+            const statsContainer = document.getElementById('statsContainer');
+            const counts = data.counts;
+            
+            if (data.across_all) {
+                statsContainer.innerHTML = `
+                    <div class="stat-card literal-card">
+                        <h3>All Annotations</h3>
+                        <div class="count">${counts.all || 0}</div>
+                    </div>
+                `;
+            } else {
+                statsContainer.innerHTML = `
+                    <div class="stat-card literal-card">
+                        <h3>Literal</h3>
+                        <div class="count">${counts.literal || 0}</div>
+                    </div>
+                    <div class="stat-card figurative-card">
+                        <h3>Figurative</h3>
+                        <div class="count">${counts.figurative || 0}</div>
+                    </div>
+                    <div class="stat-card neither-card">
+                        <h3>Neither</h3>
+                        <div class="count">${counts.neither || 0}</div>
+                    </div>
+                    <div class="stat-card unclear-card">
+                        <h3>Unclear</h3>
+                        <div class="count">${counts.unclear || 0}</div>
+                    </div>
+                `;
+            }
+            
+            statsContainer.classList.remove('hidden');
+        }
+        
+        function renderAnalysis(data) {
+            const content = document.getElementById('content');
+            const filter = document.getElementById('classificationFilter').value;
+            
+            content.innerHTML = '';
+            
+            if (data.across_all) {
+                // Render single section for all values
+                const tokens = data.results.all || [];
+                if (tokens.length === 0) {
+                    content.innerHTML = '<p>No data available.</p>';
+                    return;
+                }
+                
+                const section = document.createElement('div');
+                section.className = 'classification-section';
+                section.id = 'section-all';
+                
+                const header = document.createElement('div');
+                header.className = 'classification-header';
+                header.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                header.innerHTML = `
+                    <span>ALL VALUES - ${data.counts.all} KWIC hits, ${tokens.length} unique tokens</span>
+                    <span class="toggle">▼</span>
+                `;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'classification-content';
+                
+                renderClassificationContent(contentDiv, tokens, 'all', data.counts.all);
+                
+                section.appendChild(header);
+                section.appendChild(contentDiv);
+                content.appendChild(section);
+                
+                // Add toggle handler
+                header.addEventListener('click', function() {
+                    const toggle = this.querySelector('.toggle');
+                    contentDiv.classList.toggle('hidden');
+                    toggle.textContent = contentDiv.classList.contains('hidden') ? '▶' : '▼';
+                });
+            } else {
+                // Original behavior: render by classification
+                const classifications = ['literal', 'figurative', 'neither', 'unclear'];
+                const colors = {
+                    literal: '#667eea',
+                    figurative: '#f5576c',
+                    neither: '#00f2fe',
+                    unclear: '#38f9d7'
+                };
+                
+                classifications.forEach(classification => {
+                    if (filter !== 'all' && filter !== classification) {
+                        return;
+                    }
+                    
+                    const tokens = data.results[classification] || [];
+                    if (tokens.length === 0) {
+                        return;
+                    }
+                    
+                    const section = document.createElement('div');
+                    section.className = 'classification-section';
+                    section.id = `section-${classification}`;
+                    
+                    const header = document.createElement('div');
+                    header.className = 'classification-header';
+                    header.style.background = `linear-gradient(135deg, ${colors[classification]}, ${colors[classification]}dd)`;
+                    header.innerHTML = `
+                        <span>${classification.toUpperCase()} - ${data.counts[classification]} KWIC hits, ${tokens.length} unique tokens</span>
+                        <span class="toggle">▼</span>
+                    `;
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'classification-content';
+                    
+                    // Create filters
+                    const filtersDiv = document.createElement('div');
+                    filtersDiv.className = 'filters';
+                    filtersDiv.innerHTML = `
+                        <div class="filter-group">
+                            <label>Search:</label>
+                            <input type="text" class="token-search" placeholder="Search tokens..." data-classification="${classification}">
+                        </div>
+                        <div class="filter-group">
+                            <label>POS:</label>
+                            <select class="pos-filter" data-classification="${classification}">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Tag:</label>
+                            <select class="tag-filter" data-classification="${classification}">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Dependency:</label>
+                            <select class="dep-filter" data-classification="${classification}">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                    `;
+                    
+                    // Create table
+                    const tableDiv = document.createElement('div');
+                    tableDiv.innerHTML = `
+                        <div class="total-info">Showing <strong id="shown-${classification}">0</strong> of <strong>${tokens.length}</strong> unique tokens</div>
+                        <table class="token-table" data-classification="${classification}">
+                            <thead>
+                                <tr>
+                                    <th>Token</th>
+                                    <th>Lemma</th>
+                                    <th>POS</th>
+                                    <th>Tag</th>
+                                    <th>Dependency</th>
+                                    <th>Count</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    `;
+                    
+                    contentDiv.appendChild(filtersDiv);
+                    contentDiv.appendChild(tableDiv);
+                    
+                    header.addEventListener('click', () => {
+                        const isHidden = contentDiv.classList.contains('hidden');
+                        contentDiv.classList.toggle('hidden');
+                        header.querySelector('.toggle').textContent = isHidden ? '▼' : '▶';
+                    });
+                    
+                    section.appendChild(header);
+                    section.appendChild(contentDiv);
+                    content.appendChild(section);
+                    
+                    // Initialize filters and table
+                    setTimeout(() => initializeClassification(classification, tokens), 0);
+                });
+            }
+        }
+        
+        function renderClassificationContent(contentDiv, tokens, classification, count) {
+            // Create filters
+            const filtersDiv = document.createElement('div');
+            filtersDiv.className = 'filters';
+            filtersDiv.innerHTML = `
+                <div class="filter-group">
+                    <label>Search:</label>
+                    <input type="text" class="token-search" placeholder="Search tokens..." data-classification="${classification}">
+                </div>
+                <div class="filter-group">
+                    <label>POS:</label>
+                    <select class="pos-filter" data-classification="${classification}">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Tag:</label>
+                    <select class="tag-filter" data-classification="${classification}">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Dependency:</label>
+                    <select class="dep-filter" data-classification="${classification}">
+                        <option value="">All</option>
+                    </select>
+                </div>
+            `;
+            
+            // Create table
+            const tableDiv = document.createElement('div');
+            tableDiv.innerHTML = `
+                <div class="total-info">Showing <strong id="shown-${classification}">0</strong> of <strong>${tokens.length}</strong> unique tokens</div>
+                <table class="token-table" data-classification="${classification}">
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>Lemma</th>
+                            <th>POS</th>
+                            <th>Tag</th>
+                            <th>Dependency</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            `;
+            
+            contentDiv.appendChild(filtersDiv);
+            contentDiv.appendChild(tableDiv);
+            
+            // Initialize filters and table
+            setTimeout(() => initializeClassification(classification, tokens), 0);
+        }
+        
+        function initializeClassification(classification, tokens) {
+            // Populate filter options
+            const posFilter = document.querySelector(`.pos-filter[data-classification="${classification}"]`);
+            const tagFilter = document.querySelector(`.tag-filter[data-classification="${classification}"]`);
+            const depFilter = document.querySelector(`.dep-filter[data-classification="${classification}"]`);
+            
+            const posSet = new Set();
+            const tagSet = new Set();
+            const depSet = new Set();
+            
+            tokens.forEach(token => {
+                posSet.add(token.pos);
+                tagSet.add(token.tag);
+                depSet.add(token.dep);
+            });
+            
+            [...posSet].sort().forEach(pos => {
+                const option = document.createElement('option');
+                option.value = pos;
+                option.textContent = pos;
+                posFilter.appendChild(option);
+            });
+            
+            [...tagSet].sort().forEach(tag => {
+                const option = document.createElement('option');
+                option.value = tag;
+                option.textContent = tag;
+                tagFilter.appendChild(option);
+            });
+            
+            [...depSet].sort().forEach(dep => {
+                const option = document.createElement('option');
+                option.value = dep;
+                option.textContent = dep;
+                depFilter.appendChild(option);
+            });
+            
+            // Add filter event listeners
+            const searchInput = document.querySelector(`.token-search[data-classification="${classification}"]`);
+            
+            searchInput.addEventListener('input', () => applyFilters(classification, tokens));
+            posFilter.addEventListener('change', () => applyFilters(classification, tokens));
+            tagFilter.addEventListener('change', () => applyFilters(classification, tokens));
+            depFilter.addEventListener('change', () => applyFilters(classification, tokens));
+            
+            // Initial render
+            applyFilters(classification, tokens);
+        }
+        
+        function applyFilters(classification, tokens) {
+            const searchInput = document.querySelector(`.token-search[data-classification="${classification}"]`);
+            const posFilter = document.querySelector(`.pos-filter[data-classification="${classification}"]`);
+            const tagFilter = document.querySelector(`.tag-filter[data-classification="${classification}"]`);
+            const depFilter = document.querySelector(`.dep-filter[data-classification="${classification}"]`);
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const posValue = posFilter.value;
+            const tagValue = tagFilter.value;
+            const depValue = depFilter.value;
+            
+            const filtered = tokens.filter(token => {
+                if (searchTerm && !token.text.toLowerCase().includes(searchTerm) && 
+                    !token.lemma.toLowerCase().includes(searchTerm)) {
+                    return false;
+                }
+                if (posValue && token.pos !== posValue) return false;
+                if (tagValue && token.tag !== tagValue) return false;
+                if (depValue && token.dep !== depValue) return false;
+                return true;
+            });
+            
+            // Update shown count
+            document.getElementById(`shown-${classification}`).textContent = filtered.length;
+            
+            renderTokenTable(classification, filtered);
+        }
+        
+        function renderTokenTable(classification, tokens) {
+            const table = document.querySelector(`.token-table[data-classification="${classification}"]`);
+            const tbody = table.querySelector('tbody');
+            
+            tbody.innerHTML = '';
+            
+            tokens.forEach(token => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${token.text}</strong></td>
+                    <td>${token.lemma}</td>
+                    <td>${token.pos}</td>
+                    <td>${token.tag}</td>
+                    <td>${token.dep}</td>
+                    <td><span class="token-count">${token.count}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+
+{% include 'footer.html' %}

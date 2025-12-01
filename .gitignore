@@ -1,8 +1,26 @@
+./data/
+data/
+./data/*
+
+examples/**/*.md
+!examples/README.md
+examples/**/*.json
+examples/**/*.xlsx
+examples/**/*.pdf
+examples/**/*.arrow
+examples/**/*.txt
+exports/**/*.json
+
 .venv
 .venv/
 .venv_dev/
 
+.ipynb_checkpoints/
+.ipynb_checkpoints
 .env
+
+.DS_Store
+**/*.DS_Store
 
 *.db
 __pycache__

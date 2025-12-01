@@ -1,0 +1,25 @@
+{
+  "corpora": [
+    {
+      "friendly_name": "COCA",
+      "full_name": "Corpus of Contemporary American English",
+      "relative_filepath": "../data/english-corpora.org/coca"
+    },
+    {
+      "friendly_name": "GLOWBE",
+      "full_name": "Corpus of Global Web-Based English",
+      "relative_filepath": "../data/english-corpora.org/glowbe"
+    },
+    {
+      "friendly_name": "EEC",
+      "full_name": "EcoLexicon English Corpus",
+      "relative_filepath": "../data/sketch-engine"
+    }
+  ],
+  "user_profile": {
+    "name": "Firstname Lastname",
+    "username": "user123",
+    "email": "user123@example.com",
+    "picture": "..."
+  }
+}
