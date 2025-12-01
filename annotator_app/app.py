@@ -1842,7 +1842,10 @@ def api_ngrams():
                 if not full_text:
                     continue
                 
-                doc = nlp(full_text)
+                # Strip HTML tags and remove markdown bold markers
+                clean_text = strip_html_tags(full_text).replace('**', '')
+                
+                doc = nlp(clean_text)
                 
                 # Extract word n-grams (excluding punctuation)
                 tokens = [token.text.lower() for token in doc if not token.is_punct and not token.is_space]

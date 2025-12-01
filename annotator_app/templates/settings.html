@@ -103,6 +103,40 @@
             background-color: #0071e3;
             border-color: #0071e3;
         }
+        
+        /* Light mode tabs - ensure visibility */
+        .nav-tabs .nav-link {
+            color: #495057;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: #212529;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: #212529;
+        }
+        
+        /* Dark mode tabs */
+        body[data-theme="dark"] .nav-tabs {
+            border-color: var(--border-primary);
+        }
+        
+        body[data-theme="dark"] .nav-tabs .nav-link {
+            color: var(--text-secondary);
+            border-color: transparent;
+        }
+        
+        body[data-theme="dark"] .nav-tabs .nav-link:hover {
+            color: var(--text-primary);
+            border-color: var(--border-primary);
+        }
+        
+        body[data-theme="dark"] .nav-tabs .nav-link.active {
+            color: var(--text-primary);
+            background-color: var(--bg-secondary);
+            border-color: var(--border-primary) var(--border-primary) var(--bg-secondary);
+        }
     </style>
 </head>
 <body>
@@ -111,33 +145,113 @@
     <h1>Settings</h1>
     <p class="text-muted">Manage corpus entries and application settings</p>
     
-    <!-- Dark Mode Section -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-moon"></i> Appearance</h5>
-        </div>
-        <div class="card-body">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="darkModeToggle">
-                <label class="form-check-label" for="darkModeToggle">
-                    <i class="fas fa-moon me-2"></i>Dark Mode
-                </label>
-            </div>
-            <small class="text-muted d-block mt-2">Toggle between light and dark color schemes</small>
-        </div>
-    </div>
-    
-    <!-- Corpus Management Section -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-database"></i> Corpus Management</h5>
-        </div>
-        <div class="card-body">
-            <button class="btn btn-primary mb-3" id="addCorpusBtn">
-                <i class="fas fa-plus"></i> Add New Corpus
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                <i class="fas fa-user"></i> User Profile
             </button>
-            
-            <div id="corporaList"></div>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button" role="tab">
+                <i class="fas fa-moon"></i> Appearance
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="corpus-tab" data-bs-toggle="tab" data-bs-target="#corpus" type="button" role="tab">
+                <i class="fas fa-database"></i> Corpus Management
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content" id="settingsTabContent">
+        <!-- User Profile Tab -->
+        <div class="tab-pane fade show active" id="profile" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> User Profile</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div style="width: 150px; height: 150px; margin: 0 auto 1rem auto; position: relative;">
+                                <img id="profilePicturePreview" src="" alt="Profile Picture" 
+                                     class="rounded-circle" 
+                                     style="width: 100%; height: 100%; object-fit: cover; border: 3px solid #0071e3; display: none; position: absolute; top: 0; left: 0; z-index: 2;">
+                                <div id="profilePlaceholder" class="rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 100%; height: 100%; background: #e9ecef; border: 3px solid #0071e3; position: absolute; top: 0; left: 0; z-index: 1;">
+                                    <i class="fas fa-user fa-4x text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="mb-3">
+                                <label for="profileName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="profileName" 
+                                       placeholder="e.g., John Doe">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="profileUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="profileUsername" 
+                                       placeholder="e.g., jdoe">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="profileEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="profileEmail" 
+                                       placeholder="e.g., john.doe@example.com">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="profilePicture" class="form-label">Profile Picture URL</label>
+                                <input type="url" class="form-control" id="profilePicture" 
+                                       placeholder="e.g., https://example.com/photo.jpg">
+                                <small class="text-muted">Enter a public URL to an image</small>
+                            </div>
+                            
+                            <button class="btn btn-primary" id="saveProfileBtn">
+                                <i class="fas fa-save"></i> Save Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Appearance Tab -->
+        <div class="tab-pane fade" id="appearance" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-moon"></i> Appearance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="darkModeToggle">
+                        <label class="form-check-label" for="darkModeToggle">
+                            <i class="fas fa-moon me-2"></i>Dark Mode
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-2">Toggle between light and dark color schemes</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Corpus Management Tab -->
+        <div class="tab-pane fade" id="corpus" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-database"></i> Corpus Management</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-3" id="addCorpusBtn">
+                        <i class="fas fa-plus"></i> Add New Corpus
+                    </button>
+                    
+                    <div id="corporaList"></div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -191,9 +305,97 @@
     document.addEventListener('DOMContentLoaded', function() {
         corpusModal = new bootstrap.Modal(document.getElementById('corpusModal'));
         loadSettings();
+        loadProfile();
         initializeDarkMode();
+        
+        // Listen for profile picture URL changes
+        document.getElementById('profilePicture').addEventListener('input', function() {
+            updateProfilePicture(this.value);
+        });
     });
 
+    // User Profile Functions
+    function loadProfile() {
+        const profile = {
+            name: localStorage.getItem('profile_name') || '',
+            username: localStorage.getItem('profile_username') || '',
+            email: localStorage.getItem('profile_email') || '',
+            picture: localStorage.getItem('profile_picture') || ''
+        };
+        
+        document.getElementById('profileName').value = profile.name;
+        document.getElementById('profileUsername').value = profile.username;
+        document.getElementById('profileEmail').value = profile.email;
+        document.getElementById('profilePicture').value = profile.picture;
+        
+        updateProfilePicture(profile.picture);
+    }
+    
+    function updateProfilePicture(url) {
+        const preview = document.getElementById('profilePicturePreview');
+        const placeholder = document.getElementById('profilePlaceholder');
+        
+        if (url && url.trim() !== '') {
+            // Test if image loads successfully
+            const testImg = new Image();
+            testImg.onload = function() {
+                preview.src = url;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            testImg.onerror = function() {
+                // Image failed to load, show placeholder
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
+            };
+            testImg.src = url;
+        } else {
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+        }
+    }
+    
+    // Save profile
+    document.getElementById('saveProfileBtn').addEventListener('click', function() {
+        const profile = {
+            name: document.getElementById('profileName').value,
+            username: document.getElementById('profileUsername').value,
+            email: document.getElementById('profileEmail').value,
+            picture: document.getElementById('profilePicture').value
+        };
+        
+        // Save to localStorage (will move to database later)
+        localStorage.setItem('profile_name', profile.name);
+        localStorage.setItem('profile_username', profile.username);
+        localStorage.setItem('profile_email', profile.email);
+        localStorage.setItem('profile_picture', profile.picture);
+        
+        // Also save to settings.json for persistence
+        if (currentSettings) {
+            currentSettings.user_profile = profile;
+            saveSettingsToServer();
+        }
+        
+        alert('Profile saved successfully!');
+    });
+    
+    async function saveSettingsToServer() {
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentSettings)
+            });
+            
+            const data = await response.json();
+            if (!data.success) {
+                console.error('Failed to save settings to server:', data.error);
+            }
+        } catch (error) {
+            console.error('Network error saving settings:', error);
+        }
+    }
+    
     // Dark Mode Functions
     function initializeDarkMode() {
         const darkModeToggle = document.getElementById('darkModeToggle');
@@ -225,6 +427,16 @@
             
             if (data.success) {
                 currentSettings = data.settings;
+                
+                // Load user profile from settings if available
+                if (currentSettings.user_profile) {
+                    localStorage.setItem('profile_name', currentSettings.user_profile.name || '');
+                    localStorage.setItem('profile_username', currentSettings.user_profile.username || '');
+                    localStorage.setItem('profile_email', currentSettings.user_profile.email || '');
+                    localStorage.setItem('profile_picture', currentSettings.user_profile.picture || '');
+                    loadProfile();
+                }
+                
                 renderCorpora();
             } else {
                 alert('Error loading settings: ' + (data.error || 'Unknown error'));
