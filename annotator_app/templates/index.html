@@ -914,6 +914,10 @@
                 <button id="applySampleBtn" disabled style="background: #ff9500;">Apply Sample</button>
                 <button id="resetSampleBtn" disabled style="background: #ff3b30; display: none;">Reset to Full Dataset</button>
             </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-left: 20px; padding-left: 20px; border-left: 2px solid var(--border-secondary);">
+                <input type="checkbox" id="showAnnotatedOnlyToggle">
+                <label for="showAnnotatedOnlyToggle" style="margin: 0;">Show Annotated Only</label>
+            </div>
         </div>
         
         <div id="statsContainer" style="display: none;">
@@ -1048,9 +1052,18 @@
         const applySampleBtn = document.getElementById('applySampleBtn');
         const resetSampleBtn = document.getElementById('resetSampleBtn');
         
+        // Show annotated only toggle
+        const showAnnotatedOnlyToggle = document.getElementById('showAnnotatedOnlyToggle');
+        let filteredItems = [];  // Filtered view of items
+        let isFiltered = false;  // Track if filter is active
+        
         randomSampleToggle.addEventListener('change', function() {
             sampleSizeInput.disabled = !this.checked;
             applySampleBtn.disabled = !this.checked || allItems.length === 0;
+        });
+        
+        showAnnotatedOnlyToggle.addEventListener('change', function() {
+            applyAnnotatedFilter();
         });
         
         applySampleBtn.addEventListener('click', function() {
@@ -1130,6 +1143,66 @@
             
             const progress = sampleTotal > 0 ? (annotatedInSample / sampleTotal * 100) : 0;
             document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+        
+        function applyAnnotatedFilter() {
+            const showAnnotatedOnly = showAnnotatedOnlyToggle.checked;
+            
+            if (showAnnotatedOnly) {
+                // Filter to show only annotated items
+                const sourceItems = isSampled ? allItemsBackup : allItems;
+                filteredItems = sourceItems.filter(item => {
+                    const annotation = annotations[item.genreKey]?.[item.index];
+                    return annotation && annotation.classification;
+                });
+                
+                if (filteredItems.length === 0) {
+                    alert('No annotated items found in the dataset.');
+                    showAnnotatedOnlyToggle.checked = false;
+                    return;
+                }
+                
+                // Backup current items if not already filtered
+                if (!isFiltered && !isSampled) {
+                    allItemsBackup = [...allItems];
+                }
+                
+                allItems = [...filteredItems];
+                isFiltered = true;
+                
+                // Reset to first item
+                currentIndex = 0;
+                renderCurrentKwicItem();
+                
+                // Update stats
+                updateAnnotatedFilterStats();
+            } else {
+                // Restore original view
+                if (isFiltered) {
+                    if (isSampled) {
+                        // Restore sample
+                        allItems = [...filteredItems];
+                    } else {
+                        // Restore full dataset
+                        allItems = [...allItemsBackup];
+                    }
+                    isFiltered = false;
+                    
+                    currentIndex = 0;
+                    renderCurrentKwicItem();
+                    updateNavigation();
+                }
+            }
+        }
+        
+        function updateAnnotatedFilterStats() {
+            const filteredTotal = allItems.length;
+            
+            document.getElementById('totalStat').textContent = `${filteredTotal} (annotated)`;
+            document.getElementById('annotatedStat').textContent = filteredTotal;
+            document.getElementById('remainingStat').textContent = 0;
+            
+            document.getElementById('progressFill').style.width = '100%';
         }
         
         // Upload functionality

@@ -16,6 +16,34 @@
       "relative_filepath": "../data/sketch-engine"
     }
   ],
+  "embedding_models": [
+    {
+      "name": "embeddinggemma-300m",
+      "model_id": "google/embeddinggemma-300m",
+      "type": "semantic",
+      "description": "Google embedding model for semantic similarity"
+    },
+    {
+      "name": "english-sarcasm-detector",
+      "model_id": "helinivan/english-sarcasm-detector",
+      "type": "sarcasm",
+      "description": "Detects sarcasm in English text"
+    }
+  ],
+  "llms": [
+    {
+      "description": "gpt-oss-120b via AWS Bedrock",
+      "model_id": "openai.gpt-oss-120b-1:0",
+      "name": "gpt-oss-120b",
+      "provider": "bedrock_converse"
+    },
+    {
+      "description": "gpt-oss-20b via AWS Bedrock",
+      "model_id": "openai.gpt-oss-20b-1:0",
+      "name": "gpt-oss-20b",
+      "provider": "bedrock_converse"
+    }
+  ],
   "user_profile": {
     "name": "Firstname Lastname",
     "username": "user123",

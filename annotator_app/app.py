@@ -2302,6 +2302,135 @@ def api_embedding():
             'traceback': traceback.format_exc()
         }), 500
 
+
+@app.route('/api/sarcasm', methods=['POST'])
+def api_sarcasm():
+    """API endpoint to run sarcasm detection on annotated data.
+    
+    Returns a ranked list of all annotated items sorted by sarcasm score.
+    """
+    import string
+    
+    data = request.json
+    
+    filename = data.get('filename')
+    model_name = data.get('model', 'helinivan/english-sarcasm-detector')
+    
+    if not filename:
+        return jsonify({'error': 'No file selected'}), 400
+    
+    # Load annotation file
+    annotation_path = ANNOTATIONS_DIR / filename
+    if not annotation_path.exists():
+        return jsonify({'error': 'Annotation file not found'}), 404
+    
+    # Get the corresponding KWIC file
+    kwic_filename = filename.replace('_annotations.json', '.json')
+    if kwic_filename not in get_available_files():
+        return jsonify({'error': 'Source KWIC file not found'}), 404
+    
+    kwic_data = load_kwic_data(kwic_filename)
+    annotations = load_annotations(kwic_filename)
+    
+    if not kwic_data:
+        return jsonify({'error': 'Failed to load data'}), 500
+    
+    try:
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+        import torch
+        
+        def preprocess_text(text: str) -> str:
+            """Clean and normalize text for sarcasm detection."""
+            return text.lower().translate(str.maketrans("", "", string.punctuation)).strip()
+        
+        # Load the sarcasm detection model
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_pretrained(model_name)
+        model.eval()
+        
+        # Prepare documents from annotated data
+        documents = []
+        document_metadata = []
+        
+        for genre_key, items in kwic_data.items():
+            for idx, item in enumerate(items):
+                # Check if this item has an annotation
+                annotation = annotations.get(genre_key, {}).get(str(idx), {})
+                if not annotation:
+                    continue
+                
+                # Use cleaned context if available
+                context = item.get('text_clean', item.get('context', ''))
+                classification = annotation.get('classification')
+                notes = annotation.get('notes', '')
+                
+                documents.append(context)
+                document_metadata.append({
+                    'genre': genre_key,
+                    'text_id': item.get('text_id', ''),
+                    'context': context,
+                    'classification': classification,
+                    'notes': notes
+                })
+        
+        if not documents:
+            return jsonify({'error': 'No annotated data found in this file'}), 400
+        
+        # Run sarcasm detection on all documents
+        results = []
+        for i, text in enumerate(documents):
+            preprocessed = preprocess_text(text)
+            tokenized = tokenizer(
+                [preprocessed], 
+                padding=True, 
+                truncation=True, 
+                max_length=256, 
+                return_tensors="pt"
+            )
+            
+            with torch.no_grad():
+                output = model(**tokenized)
+            
+            probs = output.logits.softmax(dim=-1).tolist()[0]
+            # probs[0] = not sarcastic, probs[1] = sarcastic
+            sarcasm_score = probs[1]
+            is_sarcastic = 1 if sarcasm_score > 0.5 else 0
+            confidence = max(probs)
+            
+            results.append({
+                'index': i,
+                'sarcasm_score': round(sarcasm_score, 4),
+                'is_sarcastic': is_sarcastic,
+                'confidence': round(confidence, 4),
+                **document_metadata[i]
+            })
+        
+        # Sort by sarcasm score descending
+        results.sort(key=lambda x: x['sarcasm_score'], reverse=True)
+        
+        # Add rank
+        for i, result in enumerate(results):
+            result['rank'] = i + 1
+        
+        return jsonify({
+            'success': True,
+            'model': model_name,
+            'total_documents': len(documents),
+            'results': results
+        })
+        
+    except ImportError:
+        return jsonify({
+            'error': 'transformers not installed. Run: pip install transformers torch'
+        }), 500
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+
 if __name__ == '__main__':
     print(f"🚀 Starting Annotator App...")
     print(f"📂 Data directory: {DATA_DIR}")
